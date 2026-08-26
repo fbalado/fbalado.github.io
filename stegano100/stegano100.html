@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+
+<html>
+<head profile="http://www.w3.org/2005/10/profile">
+<link rel="icon" 
+      type="image/png" 
+      href="https://fbalado.github.io/stegano100/favicon.png">
+<meta charset="utf-8">
+<meta name="Description" content="stegano100 stegano 100 Matlab toolbox steganography Felix Balado David Haughton">
+
+
+<title>Στεγανό 100%</title>
+</head>
+<body>
+  <div style="width: 800px; margin: 0 auto; overflow: hidden;">
+
+    <figure>
+      <center>
+	<img src="stegano100.jpg" width="100%" alt="ΣΤΕΓΑΝO 100%"
+	     title="Στεγανό εκατό τοις εκατό">
+	<br>
+	<small>[<a href="https://fbalado.github.io/stegano100/stegano100.jpg"
+	target="_blank">ΣΤΕΓΑΝO 100%</a> is licensed
+	under <a rel="license"
+	href="http://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a>]
+	</small>
+	<figcaption>
+	  <h1>Στεγανό 100%</h1>
+	  <h4>[near-optimum perfect steganography of finite memoryless sources]</h4>
+	</figcaption>
+      </center>
+    </figure>
+
+
+    <h3>The toolbox</h3> 
+
+    <p>
+      This Matlab toolbox implements near-optimum perfect
+      steganography of finite memoryless sources, as described in
+      detail in <a href="#p1">[1]</a>.  Preliminary parts of this
+      work, which is joint research with my former PhD student David
+      Haughton, were published in conference
+      papers <a href="#p2">[2]</a> and <a href="#p3">[3]</a>. This
+      research was funded by Science Foundation Ireland under grant
+      09/RFP/CMS2212.
+    </p>
+
+    <p>
+      The Greek name of the toolbox means "100% watertight", and it is
+      meant to be pronounced <b>Stegano100</b> in English (the actual
+      Greek pronunciation would be something like /stegano' ekato' tis
+      ekato'/). The name was inspired by the inscription in a manhole
+      that illustrates this page (sometimes it pays to look
+      down). Despite its name, the plumbing in Στεγανό 100% is
+      somewhat leaky, because it uses digital images in the spatial
+      domain as hosts (which are not memoryless). However the toolbox
+      is offered as a proof of concept, meant to spur further
+      research.
+
+      In any case, the algorithms in the toolbox can be used as-is to
+      outperform any first-order steganographic approach, such as
+      model-based steganography <a href="#p6">[6]</a> and all steganographic variations of
+      LSB embedding (such as ±1 steganography, aka LSB matching <a href="#p7">[7]</a>), as discussed in
+      detail in <a href="#p1">[1]</a>.
+    </p>
+
+    <p>
+      You can download Στεγανό 100%
+      here: <a href="stegano100.tar.gz">stegano100.tar.gz</a>. The README
+      file should be enough to get you going.
+    </p>
+
+    <p>
+      <b>Note</b>: if you have landed on this webpage because you are
+      interested in ranking and unranking permutations of multisets, then
+      you are also in the right place because this problem is efficiently
+      solved within the toolbox (which relies on arithmetic coding to
+      implement Slepian's Variant I permutation coding).
+    </p>
+
+
+    <h3>Reflections about nomenclature in steganography
+    (it's all Greek to me)</h3>
+    <p>
+      I cannot help but take this occasion to say a few words about
+      the terminology commonly used in steganography.  New fields are
+      inevitably hesitant about nomenclature. This is the reason why,
+      back in 1996 at the <i>First International Workshop in
+      Information Hiding</i> <a href="#p4">[4]</a>, several words were
+      coined in order to describe novel information hiding concepts.
+      And thus, a number of terms with the inglorious prefix "stego"
+      attached to them were born, like "<strike>stegokey</strike>" and
+      "<strike>stegosystem</strike>".
+    </p>
+
+    <p>
+      The field of cryptography surely was the inspiration behind
+      these neologisms. The word "cryptography" is based on the
+      Ancient Greek κρυπτός /kryptos'/ (hidden, concealed), and from
+      the "crypto" prefix we have "<b>crypto</b>key" and
+      "<b>crypto</b>system". Since the word "steganography" is based
+      on the Greek στεγανός /steganos'/ (watertight, hermetic),
+      clearly the right prefix should have been "stegano", and not
+      "stego". Thus from "steganography" (which we could also
+      call <u>watertight watermarking</u>, just as an etymological
+      pun...) we should have arrived at "<b>stegano</b>key" and
+      "<b>stegano</b>system".
+    </p>
+
+    <p>
+      Why was then "stego" chosen, rather than "stegano"?  Well,
+      "stego" is 28% shorter than "stegano". But shorthand belongs
+      in <a href="https://en.wiktionary.org/wiki/stenography#Noun"
+      target="_blank">stenography</a>, not in steganography! (in spite
+      of the duality between compression and steganography, see
+      <a href="#p1">[1]</a>). Also, there are two syllables in "stego", like in
+      "crypto": rhyme, but no reason. If you really want my opinion,
+      it was all Jurassic Park's fault. <i>Dinomania</i> was all the
+      rage in the mid-1990s, and so I am very inclined to think that
+      the prefix "stego" was coined under the influence (so to speak)
+      of the familiar <b>stego</b>saurus. The stegosaurus name was
+      definitely in the air around that time, even though this creature
+      did not feature in Jurassic Park until its first sequel, one
+      year after <a href="#p4">[4]</a>.
+    </p>
+
+    <figure>
+      <center>
+	<img src="dino_stegosaurus_christmas_xmas_stuffed_animal-229px.png"
+	     width="20%" alt="steganosaurus" title="stego-scapegoat">
+	<figcaption>
+	  <small>
+	    [<a rel="nofollow" class="external text"
+		href="http://clipartist.net/?s=stegosaurus"
+		target="_blank">Dino Stegosaurus Christmas Xmas
+		Stuffed Animal 555px</a> is licensed
+		under <a rel="nofollow" class="external text"
+		href="http://creativecommons.org/licenses/by/2.0/"
+		target="_blank">CC BY 2.0</a>]
+	  </small>
+	</figcaption>
+      </center>
+    </figure>
+
+    <p>
+      Unfortunately "stego" in stegosaurus does not come from the
+      adjective στεγανός, but from the Ancient Greek noun στέγος
+      /ste'gos/ (roof, cover, cf. modern Greek στέγη=roof). The name
+      is due to the resemblance of the plates along the stegosaurus
+      spine with roof tiles. Still, one could argue that the prefix
+      "stego" used in information hiding is derived from στέγω
+      /ste'go/ (ancient Greek for "I cover, I keep water out"), but
+      this verbal form does not work as an adjective... This wrong use
+      is to some extent perpetuated by calling "cover" a signal used
+      to hide information. Whatever its origin, the prefix "stego"
+      agreed upon in 1996
+      <a href="#p4">[4]</a> is nothing short of a <b>betrayal</b> of the
+      historical term <i>steganographia</i> <a href="#p5">[5]</a>
+      (which has a pedigree of more than five centuries).  
+      </p>
+    
+    <p>
+      I suppose that at this stage there is little room for changing
+      the status quo, but Trithemius must be turning
+      in <a href="./grabmal_johannes_trithemius.jpg"
+      target="_blank">his grave</a> (he does look a bit cranky,
+      doesn't he?).  Ah well, not the first linguistic issue to come
+      up in the information hiding community!
+      The <a href="./ZF107091.jpg" target="_blank">cheesy use of
+      "<strike>valumetric</strike>"</a> (valumetric attack, valumetric
+      distortion) also speaks <b>volumes</b>.
+    </p>
+
+    <p>
+      Good luck <b>stegano</b>analyzing Στεγανό 100%!
+    </p>
+
+
+    <p>
+      Félix Balado
+    </p>
+
+    <p>
+      <h3><b>References</b></h3>
+    </p>
+
+    <p>
+      <a name="p1"></a>[1] F. Balado and D. Haughton, "Asymptotically
+      optimum perfect universal steganography of finite memoryless
+      sources", IEEE Transactions on Information Theory, 64
+      (2):1199-1216, February 2018  [<a href="http://arxiv.org/abs/1410.2659v4">arXiv:1410.2659</a>]
+    </p>
+    <p>
+      <a name="p2"></a>[2] F. Balado and Haughton, "Optimum perfect
+      steganography of memoryless sources as a rate-distortion problem",
+      IEEE International Workshop on Information Forensics and Security
+      (WIFS) Guangzhou, China, November
+      2013 <a href="http://hdl.handle.net/10197/5065">[full text]</a>
+    </p>
+    <p>
+      <a name="p3"></a>[3] F. Balado and D. Haughton, "Permutation codes and
+      steganography", 38th IEEE International Conference on Acoustics,
+      Speech and Signal Processing (ICASSP) Vancouver, Canada, May
+      2013 <a href="http://hdl.handle.net/10197/4369">[full text]</a>
+    </p>
+    <p>
+      <a name="p4">[4] B. Pfitzmann, "Information hiding terminology - Results of an
+	informal plenary meeting and additional proposals", in Proceedings of
+	the 1st International Workshop on Information Hiding, London (United
+	Kingdom), May-June 1996, pp. 347-350</a> <!-- <a href="http://www.semper.org/sirene/publ/Pfit12_96HideTerm.ps.gz">[ps.gz]</a> -->
+    </p>
+    <p>
+      <a name="p5">[5] J. Trithemius, "Steganographia",
+      c. 1499</a> <!-- <a href="https://www.scribd.com/doc/126299182/Johannes-Trithemius-Steganographia">[1608 edition]</a> -->
+    </p>
+    <p>
+      <a name="p6">[6] P. Sallee, “Model-based steganography,” in Procs. of the 2nd Int.
+Workshop on Digital Watermarking (IWDW), Seoul, Korea, October
+2003, pp. 154-167.</a> 
+    </p>
+    <p>
+      <a name="p7">[7] T. Sharp, “An implementation of key-based digital signal steganography,” in Procs. of the 4th Information Hiding Workshop, ser. LNCS,
+vol. 2137. Springer-Verlag, 2001, pp. 13-26</a>
+    </pa>
+
+    <p>
+      <center>
+	<small>
+	  <i>Last updated: $Date: 2018/02/04 15:22:25 $</i>
+	    <br>
+	    <br>
+	    [<a href="https://fbalado.github.io">back</a>]
+	</small>
+      </center>
+    </p>
+
+  </div>
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-13096581-2', 'auto');
+  ga('send', 'pageview');
+
+</script>
+</body>
+</html>
