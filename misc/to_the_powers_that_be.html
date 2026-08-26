@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html>
+<head profile="http://www.w3.org/2005/10/profile">
+<meta charset="utf-8">
+<meta name="Description" content="To The Powers That Be">
+
+<title>To The Powers That Be</title>
+ 
+<script type="text/x-mathjax-config">
+// This code is required for inline rendering.  
+  MathJax.Hub.Config({ 
+      tex2jax: { 
+      inlineMath: [ ['$','$'] ], 
+      processEscapes: true 
+    } 
+  }); 
+</script> 
+
+
+<script type="text/javascript"
+        src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+
+</head>
+
+<body>
+
+
+  <div style="width: 800px; margin: 0 auto; overflow: hidden;">
+    
+    <figcaption>
+      <h1>To The Powers That Be</h1>
+    </figcaption>
+
+    
+    Some years ago, my second year computer science students
+    had to face the computation below in a final year exam:
+    $$\frac{2^{30}}{2^{20}}$$
+
+    <p>
+    What happened next might surprise you. Press <button onclick="myFunction()">
+	  <b>Αποκάλυψη/Apocalypse</b></button> to literally <b>lift
+	  the veil</b> (but... what sort of clickbait is this?)
+
+    </p>
+
+    <p>
+    <i>(all comments, in parentheses and italics, are mine)</i>
+    </p>
+    
+    
+    <script> 
+      function myFunction() {
+	  var x = document.getElementById("reveal");
+	  if (x.style.display === "none") {
+	      x.style.display = "block";
+	  } else {
+	      x.style.display = "none";
+	  }
+      }
+    </script>
+
+    <div id="reveal" style="display:none">
+      
+    <ul>
+      <li> $2^{30}-2^{20}=2^{10}$  <i>(answer given by <s>three</s> six different
+	students [a whiff of plagiarism?], but I can see where they were
+      coming from; in any case the result is <u>undeniably correct</u>)</i>
+      <li> $2^{30}-2^{20}=x$, $2^{10}=x$ <i>(refinement on the
+      theme above, with a more algebraic flavour)</i>
+      <li> $\frac{2^{30}}{2^{20}}=2^{18}$ <i>(also correct, to a factor of
+	  $~256$)</i>
+      <li> $2^{30} \div 2^{20}=2^{1.5}$ <i>(wait, the previous result has
+      now been challenged...)</i>
+      <li> $\frac{2^{20}}{2^{30}}=2^{50}$ <i>(intriguing... from
+      the above one would have inferred $2^{-18}$ or
+	$2^{-1.5}$...)</i>
+    </ul>
+    
+    Some more exotic answers:
+    <ul>
+      <li> $\frac{2^{32}}{2^{20}}=12$ <i>(the deeper reasons for this
+	result are clear, but they
+	are also vertigo-inducing)</i>
+      <li> $2^{12}\times 2^{10}=2^{120}$ <i>(an
+	<u>astronomical</u> finding, somehow connected to
+	$2^{1.5}$ above)</i>
+      <li> $2^{30}=\frac{32}{2^{20}}$ <i>(judging from the previous computation, this is
+	a gross underestimation)</i>
+    </ul>
+    
+    <p>Update: <u>more power outages</u>
+      
+      <ul>
+	<li> $\frac{30}{20}=10 \to 10$ bytes <i>(refreshing innovation)</i>
+	<li> $\frac{2^{30}}{2^{20}}=2^{50}$ <i>(augmentation strategy)</i>
+	<li> $\frac{2^{20}}{2^{30}}=2^{10}$ <i>(nearly there...)</i>
+      </ul>
+      
+
+      But wait, there is more stuff <b>to be carefully examined</b>
+      from a recent final exam in third year computer science:
+      I hear you call for another
+      <button onclick="myFunction2()"> <b>Αποκάλυψη/Apocalypse</b></button> (<b>now!</b>)
+    </p>
+    
+    <script> 
+      function myFunction2() {
+	  var x = document.getElementById("reveal2");
+	  if (x.style.display === "none") {
+	      x.style.display = "block";
+	  } else {
+	      x.style.display = "none";
+	  }
+      }
+    </script>
+    
+
+    <div id="reveal2" style="display:none">
+      
+      <b>The power struggle rages on</b>:
+      <ul>	
+	<li> $61^3 \text{ mod }209=(61+61^2) \text{ mod }209$
+	<li> $61^2 \text{ mod }209=(61^2+61) \text{ mod }209$ <i>(error?)</i>
+	  <br>
+	 $61^7 \text{ mod }209=(61^3-61) \text{ mod }209$ <i>(clarification)</i>
+	<li> $61^2 \text{ mod }209=(61+61) \text{ mod }209$ 
+	<li> $61^7=61+61^2+61^4$
+	<li> $61^6=(61^4)^2$
+	<li> $(61^2)^2+(61^2)^2=61^{4+4}$
+	<li> $61^3\equiv (61^1)^2\pmod{209}$ <i>(error?)</i>
+	  
+	<br>  $61^7\equiv (61^3)^4\pmod{209}$ <i>(confirmation)</i>
+	  
+	<li> $61^5= (61^2)^{2+1}$ <i>(error?)</i>
+	  
+	<br>  $61^{11}=(61^5)^{2+1}$ <i>(innovation)</i>
+	  
+	<li>  $61^5=(61^2)^{2+1}$ <i>(error?)</i>
+	  
+	<br>  $61^{11}=(61^5)^{2+1}$ <i>(maybe cheating --- see
+	  previous)</i>
+
+	<p>
+	<i>(generalisations)</i>
+	
+	<li> $(\text{value})^{20}=(\text{value}^2)^{18}$ 
+	<li> $2^n\cdot 2^p=2^{n-p}$  
+	<li> $\frac{2^n}{p}=2^{p-n}$ <i>(whoopsie daisy!)</i>
+	<li> $C=M^e$, so $M=\left(\frac{1}{C}\right)^e$
+	  
+      </ul>
+      
+      
+      For good measure, let us also examine the <u>great confusion in Dublin</u>:
+      <ul>
+	
+	<li> $\gcd(180,3)=1$
+	<li> $\gcd(3,180)=1$
+	<li> $\gcd(3,180)=1$
+	<li> $\gcd(5,180)=1$
+	  
+	<li> $\text{lcd}(3,180)=1$ <i>(thought-provoking concept;
+	repent, the <b>gcm</b> is nigh!</i>)
+      </ul>
+      
+      
+      <p>
+	Oh, no! There is more (2025). This <button onclick="myFunction3()"> <b>Αποκάλυψη/Apocalypse</b></button> business is getting tiring, but when you make ΠΩΠ you can't stop! Just a selection this time.
+      </p>
+      
+    </div>
+
+
+    <script> 
+      function myFunction3() {
+	  var x = document.getElementById("reveal3");
+	  if (x.style.display === "none") {
+	      x.style.display = "block";
+	  } else {
+	      x.style.display = "none";
+	  }
+      }
+    </script>
+    
+
+    <div id="reveal3" style="display:none">
+      
+      <b>Feel the power</b>:
+      <ul>
+	<li> $(2^{10})^{64}=2^{140}$
+	<li> $9^9=(9^2)^2$
+	<li> $4^{16}=(4^{4})^2$
+	<li> $64^{10}=2^{80}$
+	<li> <i>Goldberg variations</i>:
+	  <ul>
+	    <li> $2^{3.6}+2^{28}=2^{31.6}$
+	    <li> $27^{17}=27^{1}+27^{16}$
+	    <li> $(3^2)^2+3^{2\cdot 2}+3^1=3^7$ (<i>outlier?</i>)
+	  </ul>
+	<li> $\frac{64^{10}}{2}=64^9$ <i>(three different students: telepathy?)</i>
+	<li> $2^{30}$ is half of $2^{60}$ <i>(I call that a power cut)</i>
+	<li> $64=2^{10}$
+	<li> $2^{\frac{1}{2}}\cdot 2^{n}=2^{\frac{n}{2}}$
+	<li> $\frac{1}{2}\times
+	2^{n-1}=\frac{2}{(2^2)^n}=2^{\frac{n}{2}}$ <i>(jury prize: remarkable
+	imagination, and a flair for sommersaults)</i>
+	<li> $\frac{2^n}{0.5}=2^{\frac{n}{2}}$
+      </ul>
+
+      Bonus tracks (powerless):
+      <ul>
+	<li> $(15)^{17}\text{ mod }33\approx 1$ <i>(only in arbitrary precision systems)</i>
+	<li> $(20-1+1)124 \text{ mod }256 = 0.96875$ <i>(modular arithmetic acrobatics)</i>
+	<li> $\text{lcd}(3,20)=1$ <i>(return of the liquid crystal display, see above)</i>
+	<li> 17 and 20 do not share a $\gcd$  between them <i>(that is mean, to share is to care)</i>
+	<li> $(11-1)\cdot(3-1)=30$
+	<li> $(11-1)\cdot(3-1)=22$
+      </ul>
+      <p>
+	Now, you should agree with me that some students need some
+	empowering...
+      </p>
+      
+    </div>
+
+    
+    </div>
+
+      <center>
+	<small>
+	  <i>Date: 2026/01/27</i>
+	    <br>
+	    <br>
+	    [<a href="https://fbalado.github.io">back</a>]
+	</small>
+      </center>
+
+</body>
+</html>

@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html>
+<head profile="http://www.w3.org/2005/10/profile">
+<meta charset="utf-8">
+<meta name="Description" content="Exact Histogram Specification
+				  Histogram Equalization Felix Balado">
+
+<title>Optimum Exact Histogram Specification</title>
+</head>
+<body>
+  <div style="width: 800px; margin: 0 auto; overflow: hidden;">
+
+        <figure>
+      <center>
+	<img src="optimo_maximo.png" width="80%" alt="Optimum EHS"
+	     title="Optimum Exact Histogram Specification">
+	<br>
+	<figcaption>
+	  <h1>oEHS: Optimum Exact Histogram Specification Toolbox</h1>
+	</figcaption>
+      </center>
+    </figure>
+
+
+    <p> <b>Exact histogram specification (EHS) </b> is a <u>classic image
+      processing problem</u> which consists of imposing any desired
+      histogram onto an arbitrary image.
+
+      <p>
+      We talk of <i>optimum</i> EHS when the distortion incurred by
+      imposing the desired histogram is minimum.  Here we make
+      available an <a href="ehs.tar.gz">EHS Matlab toolbox</a> that allows you to implement
+      optimum EHS according to the MSE criterion, as described in
+      detail in <a href="#p2">[2]</a>. The toolbox also implements
+      reconstruction (inverse EHS problem) and compares a number of
+      theoretical and empirical results.  The README file should be
+      enough to get you going.
+
+
+
+    <h4>A Bit of Background</h4>
+    <p> The exact histogram specification (EHS) problem (less often
+      called "direct histogram specification", "histogram matching",
+      "histogram modification", or "histogram modelling") finds its roots
+      in the generalisation of the concept of <i>histogram
+      equalisation</i>: the latter is just a special case of exact
+      histogram specification where the imposed histogram is flat.
+
+    <p>
+      For years,
+      the solution to the EHS problem was known to be unique in the
+      continuous case. In 2006 Coltuc et al. <a href="#p6">[6]</a>
+      showed that the lack of uniqueness in the discrete case (which
+      is of more practical importance to image processing) could be
+      overcome by using strict pixel orderings. This work sparked a
+      peak of activity around the EHS problem, <u>but the problem
+      has remained unsolved until now in terms of analytical
+      optimality under any similarity criterion</u> (see references
+      in <a href="#p2">[2]</a>).
+    </p>
+    
+    <p> The relevance of the <a href="ehs.tar.gz">EHS toolbox</a> that
+      we provide herein is put in context by the following paragraph
+      from the well-known digital image processing book by Gonzalez
+      and Woods:</p>
+
+      <blockquote>
+      <i>"Although it probably is obvious by now, we emphasize (...) that
+      histogram specification is, for the most part, a trial-and-error
+      process (...) In general, (...) there are no rules for
+	specifying histograms (...)"</i> <a href="#p1">[1, page 160]</a>
+      </blockquote>
+
+    <p><u>The remark above is no longer true</u>, as it will be clear
+    to anyone using the toolbox (see <a href="#p2">[2]</a> for more
+    details).</p>
+
+    <u>Update</u>: The latest edition of "Digital Image Processing" by
+    Gonzalez and Woods <a href="#p7">[7]</a> now covers exact
+    histogram specification, explicitly following Coltuc's et al
+    paper <a href="#p6">[6]</a>. Unfortunately, the book does not
+    discuss the optimality of the procedure, and it incorrectly
+    states that exact histogram specification can fail (see Figure
+    3.30 in <a href="#p7">[7]</a>, where the equalised histogram (b)
+    is not completely flat).
+      
+
+    <h4>Old Habits Die Hard</h4>
+    
+    <p>Standard signal processing programs persist in using histogram
+    specification algorithms which are out of sync with the latest
+    developments in the area. See for example the
+    <a href="https://www.mathworks.com/help/images/ref/histeq.html">histeq</a>
+    (histogram equalisation) function in <a href="https://www.mathworks.com">Matlab</a>, which according to
+    its  documentation
+
+    <blockquote>
+    <i>transforms the grayscale image (...) so that the histogram of the output grayscale image (...) is <b>approximately</b> flat</i>
+    </blockquote>
+    
+    <u>Update</u>: Matlab R2025b's <b>histeq</b> insists in not wanting to
+    produce completely flat histograms (or arbitrarily chosen
+    ones, as the case might be) with minimum MSE distortion.
+
+    
+    <h4>Connections, Connections...</h4>  It is interesting to
+    highlight that the core solution to optimum EHS involves
+    permutations of a multiset, and thus is identical to the solution
+    to
+      <ol>
+	<li>Optimum source coding using permutation codes (see <a href="#p4">[4]</a>)
+	<li>Optimum counterforensics of first-order forensic
+      analysis (see <a href="#p3">[3]</a>)
+      </ol>
+
+      Yet another fundamental connection of EHS is with the optimum
+      steganography problem <a href="#p5">[5]</a> (also see <a href=../stegano100/stegano100.html>Στεγανό
+      100% toolbox<a>): the family of
+      solutions to optimum EHS happens to be a particular case of
+      <b>partitioned permutation coding</b>
+      (see <a href="#p5">[5]</a>). This connection has special
+      relevance for the <u>inverse EHS</u> problem (reconstruction problem), which
+      is also discussed in <a href="#p2">[2]</a>.
+      </p>
+      
+    <p>
+      Enjoy!
+    </p>
+
+
+    <p>
+      Félix Balado
+    </p>
+    
+
+    <h3><b>References</b></h3>
+    </p>
+
+    <p>
+      <a name="p1"></a>[1] R.C. Gonzalez and R.E. Woods, "Digital image
+      processing", Prentice-Hall, 3rd edition, 2007
+    </p>
+    <p>
+      <a name="p2"></a>[2] F. Balado, "Optimum exact histogram
+      specification", 44th IEEE International Conference on Acoustics,
+      Speech and Signal Processing (ICASSP), Calgary, Canada, April
+      2018 <!-- <a href="./exact_histogram_specification.pdf">[full -->
+      <!-- text]</a> -->  <a href="https://researchrepository.ucd.ie/handle/10197/9975">[full text]</a>  
+    </p>
+    <p>
+      <a name="p3"></a>[3] F. Balado, "The role of permutation coding
+      in minimum-distortion perfect counterforensics", 39th IEEE International Conference on Acoustics,
+      Speech and Signal Processing (ICASSP), Florence, Italy, May
+      2013 <a href="http://hdl.handle.net/10197/5565">[full text]</a>
+    </p>
+    <p>
+      <a name="p4"></a>[4] T. Berger, F. Jelinek and J. Wolf, "Permutation codes for sources", IEEE Transactions on Information Theory, vol. 18, no. 1, pp. 160-169, Jan 1972
+    </p>
+    <p>
+      <a name="p5"></a>[5] F. Balado and D. Haughton, "Asymptotically
+      optimum perfect universal steganography of finite memoryless
+      sources", IEEE Transactions on Information Theory, 64
+      (2):1199-1216, February 2018  [<a href="http://arxiv.org/abs/1410.2659v4">arXiv:1410.2659</a>]
+    </p>
+      <a name="p6"></a>[6] D. Coltuc, P. Bolon, and J.M. Chassery,
+"Exact histogram specification",
+IEEE Transactions on Image Processing, vol. 15, no. 5, pp. 1143-1152, May
+  2006
+    </p>
+    <p>
+      <a name="p7"></a>[7] R.C. Gonzalez and R.E. Woods, "Digital image
+      processing", Pearson, 4th edition, 2018
+    </p>
+
+    <p>
+    <center>
+    <small>
+      <i>Last updated: $Date: 2026/03/27 09:04:47 $ </i>
+	    <br>
+	    <br>
+	    [<a href="https://fbalado.github.io">back</a>]
+    </small>
+      </center>
+    </p>
+
+  </div>
+</body>
+</html>

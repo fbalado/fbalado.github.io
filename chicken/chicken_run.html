@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta charset="UTF-8" />
+<meta name="generator" content="LaTeX Lwarp package" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>In for the Long Run</title>
+<link rel="stylesheet" type="text/css" href="chicken_run.css" />
+
+<script>
+// Lwarp MathJax emulation code
+//
+// Based on code by Davide P. Cervone.
+// Equation numbering: https://github.com/mathjax/MathJax/issues/2427
+// Starred and ifnextchar macros: https://github.com/mathjax/MathJax/issues/2428
+// \left, \right delimiters: https://github.com/mathjax/MathJax/issues/2535
+//
+// Modified by Brian Dunn to adjust equation numbering and add subequations.
+//
+// LaTeX can use \seteqnumber{subequations?}{section}{number} before each equation.
+// subequations? is 0 usually, 1 if inside subequations.
+// section is a string printed as-is, or empty.
+// number is auto-incremented by MathJax between equations.
+//
+MathJax = {
+     subequations: "0",
+     section: "",
+     loader: {
+          load: ['[tex]/tagformat', '[tex]/textmacros'],
+     },
+     startup: {
+          ready() {
+              //       These would be replaced by import commands if you wanted to make
+              //       a proper extension.
+              const Configuration = MathJax._.input.tex.Configuration.Configuration;
+              const CommandMap = MathJax._.input.tex.SymbolMap.CommandMap;
+              const Macro = MathJax._.input.tex.Symbol.Macro;
+              const TexError = MathJax._.input.tex.TexError.default;
+              const ParseUtil = MathJax._.input.tex.ParseUtil.default;
+              const expandable = MathJax._.util.Options.expandable;
+
+
+              //       Insert the replacement string into the TeX string, and check
+              //       that there haven't been too many maxro substitutions (prevents
+              //       infinite loops).
+              const useArgument = (parser, text) => {
+                   parser.string = ParseUtil.addArgs(parser, text, parser.string.slice(parser.i));
+                   parser.i = 0;
+                   if (++parser.macroCount > parser.configuration.options.maxMacros) {
+                        throw new TexError('MaxMacroSub1',
+                        'MathJax maximum macro substitution count exceeded; ' +
+                        'is there a recursive macro call?');
+                   }
+              }
+
+
+              //       Create the command map for:
+              //            \ifstar, \ifnextchar, \ifblank, \ifstrequal, \gsub, \seteqnumber
+              new CommandMap('Lwarp-macros', {
+                   ifstar: 'IfstarFunction',
+                   ifnextchar: 'IfnextcharFunction',
+                   ifblank: 'IfblankFunction',
+                   ifstrequal: 'IfstrequalFunction',
+                   gsubstitute: 'GsubstituteFunction',
+                   seteqnumber: 'SeteqnumberFunction'
+              }, {
+                   //       This function implements an ifstar macro.
+                   IfstarFunction(parser, name) {
+                        const resultstar = parser.GetArgument(name);
+                        const resultnostar = parser.GetArgument(name);
+                        const star = parser.GetStar();                        // true if there is a *
+                        useArgument(parser, star ? resultstar : resultnostar);
+                   },
+
+
+                   //       This function implements an ifnextchar macro.
+                   IfnextcharFunction(parser, name) {
+                        let whichchar = parser.GetArgument(name);
+                        if (whichchar.match(/^(?:0x[0-9A-F]+|[0-9]+)$/i)) {
+                            // $ syntax highlighting
+                            whichchar = String.fromCodePoint(parseInt(whichchar));
+                        }
+                        const resultnextchar = parser.GetArgument(name);
+                        const resultnotnextchar = parser.GetArgument(name);
+                        const gotchar = (parser.GetNext() === whichchar);
+                        useArgument(parser, gotchar ? resultnextchar : resultnotnextchar);
+                   },
+
+
+                   // This function implements an ifblank macro.
+                   IfblankFunction(parser, name) {
+                        const blankarg = parser.GetArgument(name);
+                        const resultblank = parser.GetArgument(name);
+                        const resultnotblank = parser.GetArgument(name);
+                        const isblank = (blankarg.trim() == "");
+                        useArgument(parser, isblank ? resultblank : resultnotblank);
+                   },
+
+
+                   // This function implements an ifstrequal macro.
+                   IfstrequalFunction(parser, name) {
+                        const strequalfirst = parser.GetArgument(name);
+                        const strequalsecond = parser.GetArgument(name);
+                        const resultequal = parser.GetArgument(name);
+                        const resultnotequal = parser.GetArgument(name);
+                        const isequal = (strequalfirst == strequalsecond);
+                        useArgument(parser, isequal ? resultequal : resultnotequal);
+                   },
+
+
+                   // This function implements a gsub macro.
+                   GsubstituteFunction(parser, name) {
+                        const gsubfirst = parser.GetArgument(name);
+                        const gsubsecond = parser.GetArgument(name);
+                        const gsubthird = parser.GetArgument(name);
+                        let gsubresult=gsubfirst.replace(gsubsecond, gsubthird);
+                        useArgument(parser, gsubresult);
+                   },
+
+
+                   //       This function modifies the equation numbers.
+                   SeteqnumberFunction(parser, name) {
+                            //   Get the macro parameters
+                            const star = parser.GetStar();                      // true if there is a *
+                            const optBrackets = parser.GetBrackets(name);        // contents of optional brackets
+                            const newsubequations = parser.GetArgument(name);      // the subequations argument
+                            const neweqsection = parser.GetArgument(name);      // the eq section argument
+                            const neweqnumber = parser.GetArgument(name);        // the eq number argument
+                            MathJax.config.subequations=newsubequations ;       // a string with boolean meaning
+                            MathJax.config.section=neweqsection ;               // a string with numeric meaning
+                            parser.tags.counter = parser.tags.allCounter = neweqnumber ;
+                   }
+
+
+              });
+
+
+              //       Create the Lwarp-macros package
+              Configuration.create('Lwarp-macros', {
+                   handler: {macro: ['Lwarp-macros']}
+              });
+
+
+              MathJax.startup.defaultReady();
+
+
+              // For forward references:
+              MathJax.startup.input[0].preFilters.add(({math}) => {
+                   if (math.inputData.recompile){
+                            MathJax.config.subequations = math.inputData.recompile.subequations;
+                            MathJax.config.section = math.inputData.recompile.section;
+                   }
+              });
+              MathJax.startup.input[0].postFilters.add(({math}) => {
+                   if (math.inputData.recompile){
+                            math.inputData.recompile.subequations = MathJax.config.subequations;
+                            math.inputData.recompile.section = MathJax.config.section;
+                   }
+              });
+
+
+                   // For \left, \right with unicode-math:
+                   const {DelimiterMap} = MathJax._.input.tex.SymbolMap;
+                   const {Symbol} = MathJax._.input.tex.Symbol;
+                   const {MapHandler} = MathJax._.input.tex.MapHandler;
+                   const delimiter = MapHandler.getMap('delimiter');
+                   delimiter.add('\\lBrack', new Symbol('\\lBrack', '\u27E6'));
+                   delimiter.add('\\rBrack', new Symbol('\\rBrack', '\u27E7'));
+                   delimiter.add('\\lAngle', new Symbol('\\lAngle', '\u27EA'));
+                   delimiter.add('\\rAngle', new Symbol('\\rAngle', '\u27EB'));
+                   delimiter.add('\\lbrbrak', new Symbol('\\lbrbrak', '\u2772'));
+                   delimiter.add('\\rbrbrak', new Symbol('\\rbrbrak', '\u2773'));
+                   delimiter.add('\\lbag', new Symbol('\\lbag', '\u27C5'));
+                   delimiter.add('\\rbag', new Symbol('\\rbag', '\u27C6'));
+                   delimiter.add('\\llparenthesis', new Symbol('\\llparenthesis', '\u2987'));
+                   delimiter.add('\\rrparenthesis', new Symbol('\\rrparenthesis', '\u2988'));
+                   delimiter.add('\\llangle', new Symbol('\\llangle', '\u2989'));
+                   delimiter.add('\\rrangle', new Symbol('\\rrangle', '\u298A'));
+                   delimiter.add('\\Lbrbrak', new Symbol('\\Lbrbrak', '\u27EC'));
+                   delimiter.add('\\Rbrbrak', new Symbol('\\Rbrbrak', '\u27ED'));
+                   delimiter.add('\\lBrace', new Symbol('\\lBrace', '\u2983'));
+                   delimiter.add('\\rBrace', new Symbol('\\rBrace', '\u2984'));
+                   delimiter.add('\\lParen', new Symbol('\\lParen', '\u2985'));
+                   delimiter.add('\\rParen', new Symbol('\\rParen', '\u2986'));
+                   delimiter.add('\\lbrackubar', new Symbol('\\lbrackubar', '\u298B'));
+                   delimiter.add('\\rbrackubar', new Symbol('\\rbrackubar', '\u298C'));
+                   delimiter.add('\\lbrackultick', new Symbol('\\lbrackultick', '\u298D'));
+                   delimiter.add('\\rbracklrtick', new Symbol('\\rbracklrtick', '\u298E'));
+                   delimiter.add('\\lbracklltick', new Symbol('\\lbracklltick', '\u298F'));
+                   delimiter.add('\\rbrackurtick', new Symbol('\\rbrackurtick', '\u2990'));
+                   delimiter.add('\\langledot', new Symbol('\\langledot', '\u2991'));
+                   delimiter.add('\\rangledot', new Symbol('\\rangledot', '\u2992'));
+                   delimiter.add('\\lparenless', new Symbol('\\lparenless', '\u2993'));
+                   delimiter.add('\\rparengtr', new Symbol('\\rparengtr', '\u2994'));
+                   delimiter.add('\\Lparengtr', new Symbol('\\Lparengtr', '\u2995'));
+                   delimiter.add('\\Rparenless', new Symbol('\\Rparenless', '\u2996'));
+                   delimiter.add('\\lblkbrbrak', new Symbol('\\lblkbrbrak', '\u2997'));
+                   delimiter.add('\\rblkbrbrak', new Symbol('\\rblkbrbrak', '\u2998'));
+                   delimiter.add('\\lvzigzag', new Symbol('\\lvzigzag', '\u29D8'));
+                   delimiter.add('\\rvzigzag', new Symbol('\\rvzigzag', '\u29D9'));
+                   delimiter.add('\\Lvzigzag', new Symbol('\\Lvzigzag', '\u29DA'));
+                   delimiter.add('\\Rvzigzag', new Symbol('\\Rvzigzag', '\u29DB'));
+                   delimiter.add('\\lcurvyangle', new Symbol('\\lcurvyangle', '\u29FC'));
+                   delimiter.add('\\rcurvyangle', new Symbol('\\rcurvyangle', '\u29FD'));
+                   delimiter.add('\\Vvert', new Symbol('\\Vvert', '\u2980'));
+          }       // ready
+     },           // startup
+
+
+     tex: {
+          packages: {'[+]': ['tagformat', 'Lwarp-macros', 'textmacros']},
+          tags: "ams",
+                   tagformat: {
+                            number: function (n) {
+                                 if(MathJax.config.subequations==0)
+                                        return(MathJax.config.section + n);
+                                 else
+                                        return(MathJax.config.section + String.fromCharCode(96+n));
+                            },
+                   },
+     }
+}
+</script>
+
+
+<script
+          id="MathJax-script"
+          src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"
+></script>
+
+</head>
+<body>
+
+
+<div class="bodywithoutsidetoc">
+
+
+<main class="bodycontainer">
+
+
+<section class="textbody">
+
+<a id="chicken_run-autofile-0"></a>
+
+<!--MathJax customizations:-->
+<div data-nosnippet
+    style="display:none"
+>
+
+\(\newcommand{\footnotename}{footnote}\)
+
+\(\def \LWRfootnote {1}\)
+
+\(\newcommand {\footnote }[2][\LWRfootnote ]{{}^{\mathrm {#1}}}\)
+
+\(\newcommand {\footnotemark }[1][\LWRfootnote ]{{}^{\mathrm {#1}}}\)
+
+\(\let \LWRorighspace \hspace \)
+
+\(\renewcommand {\hspace }{\ifstar \LWRorighspace \LWRorighspace }\)
+
+\(\newcommand {\TextOrMath }[2]{#2}\)
+
+\(\newcommand {\mathnormal }[1]{{#1}}\)
+
+\(\newcommand \ensuremath [1]{#1}\)
+
+\(\newcommand {\LWRframebox }[2][]{\fbox {#2}} \newcommand {\framebox }[1][]{\LWRframebox } \)
+
+\(\newcommand {\setlength }[2]{}\)
+
+\(\newcommand {\addtolength }[2]{}\)
+
+\(\newcommand {\setcounter }[2]{}\)
+
+\(\newcommand {\addtocounter }[2]{}\)
+
+\(\newcommand {\arabic }[1]{}\)
+
+\(\newcommand {\number }[1]{}\)
+
+\(\newcommand {\noalign }[1]{\text {#1}\notag \\}\)
+
+\(\newcommand {\cline }[1]{}\)
+
+\(\newcommand {\directlua }[1]{\text {(directlua)}}\)
+
+\(\newcommand {\luatexdirectlua }[1]{\text {(directlua)}}\)
+
+\(\newcommand {\protect }{}\)
+
+\(\def \LWRabsorbnumber #1 {}\)
+
+\(\def \LWRabsorbquotenumber &quot;#1 {}\)
+
+\(\newcommand {\LWRabsorboption }[1][]{}\)
+
+\(\newcommand {\LWRabsorbtwooptions }[1][]{\LWRabsorboption }\)
+
+\(\def \mathchar {\ifnextchar &quot;\LWRabsorbquotenumber \LWRabsorbnumber }\)
+
+\(\def \mathcode #1={\mathchar }\)
+
+\(\let \delcode \mathcode \)
+
+\(\let \delimiter \mathchar \)
+
+\(\def \oe {\unicode {x0153}}\)
+
+\(\def \OE {\unicode {x0152}}\)
+
+\(\def \ae {\unicode {x00E6}}\)
+
+\(\def \AE {\unicode {x00C6}}\)
+
+\(\def \aa {\unicode {x00E5}}\)
+
+\(\def \AA {\unicode {x00C5}}\)
+
+\(\def \o {\unicode {x00F8}}\)
+
+\(\def \O {\unicode {x00D8}}\)
+
+\(\def \l {\unicode {x0142}}\)
+
+\(\def \L {\unicode {x0141}}\)
+
+\(\def \ss {\unicode {x00DF}}\)
+
+\(\def \SS {\unicode {x1E9E}}\)
+
+\(\def \dag {\unicode {x2020}}\)
+
+\(\def \ddag {\unicode {x2021}}\)
+
+\(\def \P {\unicode {x00B6}}\)
+
+\(\def \copyright {\unicode {x00A9}}\)
+
+\(\def \pounds {\unicode {x00A3}}\)
+
+\(\let \LWRref \ref \)
+
+\(\renewcommand {\ref }{\ifstar \LWRref \LWRref }\)
+
+\( \newcommand {\multicolumn }[3]{#3}\)
+
+\(\require {textcomp}\)
+
+\(\newcommand {\intertext }[1]{\text {#1}\notag \\}\)
+
+\(\let \Hat \hat \)
+
+\(\let \Check \check \)
+
+\(\let \Tilde \tilde \)
+
+\(\let \Acute \acute \)
+
+\(\let \Grave \grave \)
+
+\(\let \Dot \dot \)
+
+\(\let \Ddot \ddot \)
+
+\(\let \Breve \breve \)
+
+\(\let \Bar \bar \)
+
+\(\let \Vec \vec \)
+
+\(\newcommand {\LWRsubmultirow }[2][]{#2}\)
+
+\(\newcommand {\LWRmultirow }[2][]{\LWRsubmultirow }\)
+
+\(\newcommand {\multirow }[2][]{\LWRmultirow }\)
+
+\(\newcommand {\mrowcell }{}\)
+
+\(\newcommand {\mcolrowcell }{}\)
+
+\(\newcommand {\STneed }[1]{}\)
+
+</div>
+
+<a id="chicken_run-autopage-1"></a>
+<div class="titlepage">
+
+<h1>In for the Long Run</h1>
+
+
+<div class="author">
+
+
+<div class="oneauthor">
+
+</div>
+
+</div>
+
+
+<div class="titledate">
+
+</div>
+
+</div>
+
+<figure id="autoid-1" class="figure ">
+<div class="center">
+
+<p>
+
+<a href="./fig/chicken_run.jpg" target="_blank" ><img
+    src="./fig/chicken_run.jpg"
+    style="
+    width:285pt;
+    "
+    class="inlineimage"
+    alt="(image)"
+></a>
+</p>
+
+<p>
+Chicken <b>run</b>, immortalised in a fresh bed of concrete
+</p>
+<p>
+[<a href="./fig/chicken_run.jpg" target="_blank" >licensed</a> under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank" >CC BY-NC-SA 4.0</a>]
+</p>
+</div>
+
+</figure>
+
+<p>
+Here is a \(20\times 20\) square of bits generated <span class="underline">uniformly at random</span>:
+</p>
+<div class="center">
+
+<p>
+
+<a href="./fig/clumps2d.png" target="_blank" ><img
+    src="./fig/clumps2d.png"
+    style="
+    width:85pt;
+    "
+    class="inlineimage"
+    alt="(image)"
+></a>
+</p>
+</div>
+
+<p>
+Can you see any <b>clumps</b>? (maybe a <a href="https://en.wikipedia.org/wiki/Rorschach_test" target="_blank" >Rorschach test</a> is in order). Same happens in one dimension: here you have a string of 200 bits
+generated <span class="underline">uniformly at random</span>:
+</p>
+<div class="center">
+
+<p>
+
+<a href="./fig/clumps1d.png" target="_blank" ><img
+    src="./fig/clumps1d.png"
+    style="
+    width:434pt;
+    height:2.84544pt ;
+    "
+    class="inlineimage"
+    alt="(image)"
+></a>
+</p>
+</div>
+
+<p>
+You’ll agree with us that the string contains a few <b>runs</b>.
+</p>
+
+<p>
+Now, Michael Jordan had 866 <b>consecutive</b> double-digits scoring games (is that a hot hand, or what?&nbsp;<a id="chicken_run-autopage-5"></a>[<a
+href="chicken_run.html#LWR-ht-cite.0@tversky89:_cold_facts">1</a>]). Bjo&#x0308;rn Borg won 49 matches <b>in a row</b>. Joe DiMaggio had a hitting <b>streak</b> that lasted for 56 games&nbsp;[<a
+href="chicken_run.html#LWR-ht-cite.0@schilling12:_surpr">2</a>]. We’d be forgiven for believing that this cannot possibly be random, even though everyone <i>knows</i> that good and bad luck come in <b>spells</b>.
+After all, even some <a href="https://www.uni-wuerzburg.de/en/uniarchiv/personalities/eminent-scholars/karl-marbe" target="_blank" >brainy philosophers</a> have believed that the longer the <b>run</b> of
+heads when flipping a fair coin, the more likely it is that tails will turn up on the next flip. <i>Or maybe not</i>.
+</p>
+
+<p>
+<a href="https://en.wikipedia.org/wiki/Abraham_de_Moivre" target="_blank" >Abraham de Moivre</a> first investigated how to model <b>runs</b> back in 1718. The theory of runs got a big push in the first half of the
+20th c., and an even bigger push in the second half. After a brief, naive incursion into the topic&nbsp;[<a href="chicken_run.html#LWR-ht-cite.0@balado2023runs">3</a>], we figured we’d take a deeper dive into the world of
+runs. We stumbled upon some exotic findings (in increasing order of weirdness):
+</p>
+
+<ul class="itemize" style="list-style-type:none">
+
+<li>
+<p>
+<span class="listmarker">•</span> <b>Some runs are invisible</b> —well, you can actually see them through specially tinted glasses. We christened them <i>null runs</i>, but we could as well have named them <i>ghost
+runs</i>: they will doggedly haunt us and refuse to go away. A reviewer who had an early encounter with null runs was appalled enough to call them “<i>a fringe interpretation of a run</i>” (understandable: they are so
+concealed that they do not even appear in a Google search). But null runs are unfazed by human dislikes, and are here to claim a place in the theory of runs.
+</p>
+</li>
+<li>
+
+<p>
+<span class="listmarker">•</span> Somewhere, somehow, there is a lonesome <b>binary string of length</b> \(\mathbf {-1}\) which is so dispossessed as to contain no runs whatsoever (not even null runs!). Are we
+starting to tread on thin ice here? We should not worry too much: as recently as the late 18th&nbsp;c., some mathematicians like Maseres and Frend still renounced the use of both negative and imaginary numbers&nbsp;[<a
+href="chicken_run.html#LWR-ht-cite.0@katz09:_histor">4</a>, p. 730]. For example, Frend wrote&nbsp;[<a href="chicken_run.html#LWR-ht-cite.0@frend96">5</a>, pp. x–xi]
+</p>
+<blockquote>
+<p>
+“<i>The first error in teaching the principles of algebra is obvious (&#x2026;) Numbers are (&#x2026;)&nbsp;divided into two sorts, positive and negative; and an attempt is made to explain the nature of negative numbers by
+allusions to book-debts and other arts. (&#x2026;) This is all jargon, at which common sense recoils; but, from its having been once adopted, like many other figments, it finds the most strenuous supporters among those who love to
+take things upon trust, and hate the labour of a serious thought.</i>”
+</p>
+</blockquote>
+<p>
+Will our aforementioned critical reviewer’s common sense also recoil at the view of the forlorn binary string of length \(-1\)? Hopefully not, because it desperately needs more friends (and not more Frends): its only pal, the binary
+string of length zero (aka, the <i>empty</i> binary string), seems to have everyone’s full acceptance already —even if no one has ever seen it either&#x2026;
+</p>
+</li>
+<li>
+
+<p>
+<span class="listmarker">•</span> <b>Strictly greater than one probabilities</b> have pride of place in the big scheme of runs. Are we one step closer to falling into total disrepute? To try to get away with this one we’ll
+start by quoting Dirac&nbsp;<a id="chicken_run-autopage-6"></a>[<a href="chicken_run.html#LWR-ht-cite.0@dirac42:_baker_lectur">6</a>, p. 8]:
+</p>
+<blockquote>
+<p>
+“<i>Negative energies and probabilities should not be considered as nonsense. They are well-defined concepts mathematically, like a negative sum of money</i> (&#x2026;)”
+</p>
+</blockquote>
+<p>
+(Frend would surely love the last sentence&#x2026;) and then Feynman&nbsp;<a id="chicken_run-autopage-7"></a>[<a href="chicken_run.html#LWR-ht-cite.0@feynman87:_negat">7</a>, p. 3]:
+</p>
+<blockquote>
+<p>
+“<i>A probability greater than unity presents no problem different from that of negative probabilities, for it represents a negative probability that the event will not occur.”</i>
+</p>
+</blockquote>
+<p>
+Clear as mud? Proof by authority? Love them or hate them, greater than one probabilities are here to stay: fortunately, they only concern that shy binary string of length \(-1\), and together they make the theory of runs more
+aesthetic (and easier in practice).
+</p>
+</li>
+</ul>
+
+<p>
+Have we lost the <b>run</b> of ourselves? It might be: the whole story is in our paper&nbsp;<a id="chicken_run-autopage-8"></a>[<a href="chicken_run.html#LWR-ht-cite.0@balado26:_system">8</a>].
+</p>
+
+<p>
+Enjoy,
+</p>
+
+<p>
+Félix Balado and Guénolé Silvestre
+</p>
+
+<figure id="autoid-2" class="figure ">
+<div class="center">
+
+<p>
+
+<a href="./fig/a006345.png" target="_blank" ><img
+    src="./fig/a006345.png"
+    style="
+    width:427pt;
+    "
+    class="inlineimage"
+    alt="(image)"
+></a>
+</p>
+
+<p>
+[<a href="./fig/a006345.png" target="_blank" >Peanuts ©1952, UFS, Inc</a>] (<a href="https://oeis.org/A006345" target="_blank" >Linus sequence</a>)
+</p>
+</div>
+
+</figure>
+<!--
+...... section References ......
+-->
+<h4 id="autosec-10">References</h4>
+<a id="chicken_run-autopage-10"></a>
+
+
+<ul class="list" style="list-style-type:none">
+
+
+<li>
+<p>
+<span class="listmarker">[1]</span> <a id="LWR-ht-cite.0@tversky89:_cold_facts"></a>A. Tversky and T. Gilovich. “The Cold Facts about the “Hot Hand” in Basketball”. In: <em>Chance</em> 2.1 (1989), pp. 16–21.
+</p>
+
+
+</li>
+<li>
+
+
+<p>
+<span class="listmarker">[2]</span> <a id="LWR-ht-cite.0@schilling12:_surpr"></a>M. F. Schilling. “The Surprising Predictability of Long Runs”. In: <em>Math. Mag.</em> 85 (2012), pp. 141–149.
+</p>
+
+
+</li>
+<li>
+
+
+<p>
+<span class="listmarker">[3]</span> <a id="LWR-ht-cite.0@balado2023runs"></a>F. Balado and G. C. M. Silvestre. <em>Runs of Ones in Binary Strings</em>. arxiv preprint arXiv:2302.11532 [math.CO]. Available at <a
+href="https://arxiv.org/abs/2302.11532" target="_blank" >https://arxiv.org/abs/2302.11532</a>. Feb. 2023.
+</p>
+
+
+</li>
+<li>
+
+
+<p>
+<span class="listmarker">[4]</span> <a id="LWR-ht-cite.0@katz09:_histor"></a>V. Katz. <em>A History of Mathematics</em>. 3rd. Addison-Wesley, 2009.
+</p>
+
+
+</li>
+<li>
+
+
+<p>
+<span class="listmarker">[5]</span> <a id="LWR-ht-cite.0@frend96"></a>W. Frend. <em>The principles of algebra</em>. London: G.G. and J. Robinson, 1796.
+</p>
+
+
+</li>
+<li>
+
+
+<p>
+<span class="listmarker">[6]</span> <a id="LWR-ht-cite.0@dirac42:_baker_lectur"></a>P. A. M. Dirac. “Bakerian Lecture - The physical interpretation of quantum mechanics”. In: <em>Procs. Royal Soc. London. A</em>
+180.980 (Mar. 1942), pp. 1–40.
+</p>
+
+
+</li>
+<li>
+
+
+<p>
+<span class="listmarker">[7]</span> <a id="LWR-ht-cite.0@feynman87:_negat"></a>R. P. Feynman. “Negative probability”. In: <em>Quantum implications: Essays in honor of David Bohm</em>. Routledge, 1987,
+pp. 235–248.
+</p>
+
+
+</li>
+<li>
+
+
+<p>
+<span class="listmarker">[8]</span> <a id="LWR-ht-cite.0@balado26:_system"></a>F. Balado and G. C. M. Silvestre. <em>Systematic Enumeration of Fundamental Quantities Involving Runs in Binary Strings</em>. arxiv
+preprint arXiv:2602.10005 [math.CO]. Available at <a href="https://arxiv.org/abs/2602.10005" target="_blank" >https://arxiv.org/abs/2602.10005</a>. Feb. 2026.
+</p>
+</li>
+</ul>
+<div class="center">
+
+<p>
+<i>Last updated: 2026/02/11 08:32:06</i>
+</p>
+
+<p>
+[<a href="https://fbalado.github.io" target="_blank" >back</a>]
+</p>
+</div>
+
+<a id="chicken_run-autofile-last"></a>
+</section>
+
+</main>
+
+</div>
+
+</body>
+</html>

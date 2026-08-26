@@ -1,0 +1,1778 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta charset="UTF-8" />
+<meta name="generator" content="LaTeX Lwarp package" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Runs of Ones in Binary Strings</title>
+<link rel="stylesheet" type="text/css" href="runs.css" />
+
+<script>
+// Lwarp MathJax emulation code
+//
+// Based on code by Davide P. Cervone.
+// Equation numbering: https://github.com/mathjax/MathJax/issues/2427
+// Starred and ifnextchar macros: https://github.com/mathjax/MathJax/issues/2428
+// \left, \right delimiters: https://github.com/mathjax/MathJax/issues/2535
+//
+// Modified by Brian Dunn to adjust equation numbering and add subequations.
+//
+// LaTeX can use \seteqnumber{subequations?}{section}{number} before each equation.
+// subequations? is 0 usually, 1 if inside subequations.
+// section is a string printed as-is, or empty.
+// number is auto-incremented by MathJax between equations.
+//
+MathJax = {
+   subequations: "0",
+   section: "",
+   loader: {
+      load: ['[tex]/tagformat', '[tex]/textmacros'],
+   },
+   startup: {
+      ready() {
+        // These would be replaced by import commands if you wanted to make
+        // a proper extension.
+        const Configuration = MathJax._.input.tex.Configuration.Configuration;
+        const CommandMap = MathJax._.input.tex.SymbolMap.CommandMap;
+        const Macro = MathJax._.input.tex.Symbol.Macro;
+        const TexError = MathJax._.input.tex.TexError.default;
+        const ParseUtil = MathJax._.input.tex.ParseUtil.default;
+        const expandable = MathJax._.util.Options.expandable;
+
+        // Insert the replacement string into the TeX string, and check
+        // that there haven't been too many maxro substitutions (prevents
+        // infinite loops).
+        const useArgument = (parser, text) => {
+          parser.string = ParseUtil.addArgs(parser, text, parser.string.slice(parser.i));
+          parser.i = 0;
+          if (++parser.macroCount > parser.configuration.options.maxMacros) {
+            throw new TexError('MaxMacroSub1',
+            'MathJax maximum macro substitution count exceeded; ' +
+            'is there a recursive macro call?');
+          }
+        }
+
+        // Create the command map for:
+        //      \ifstar, \ifnextchar, \ifblank, \ifstrequal, \gsub, \seteqnumber
+        new CommandMap('Lwarp-macros', {
+           ifstar: 'IfstarFunction',
+           ifnextchar: 'IfnextcharFunction',
+           ifblank: 'IfblankFunction',
+           ifstrequal: 'IfstrequalFunction',
+           gsubstitute: 'GsubstituteFunction',
+           seteqnumber: 'SeteqnumberFunction'
+        }, {
+           // This function implements an ifstar macro.
+           IfstarFunction(parser, name) {
+              const resultstar = parser.GetArgument(name);
+              const resultnostar = parser.GetArgument(name);
+              const star = parser.GetStar();                 // true if there is a *
+              useArgument(parser, star ? resultstar : resultnostar);
+           },
+
+          // This function implements an ifnextchar macro.
+          IfnextcharFunction(parser, name) {
+             let whichchar = parser.GetArgument(name);
+             if (whichchar.match(/^(?:0x[0-9A-F]+|[0-9]+)$/i)) {
+               // $ syntax highlighting
+               whichchar = String.fromCodePoint(parseInt(whichchar));
+             }
+             const resultnextchar = parser.GetArgument(name);
+             const resultnotnextchar = parser.GetArgument(name);
+             const gotchar = (parser.GetNext() === whichchar);
+             useArgument(parser, gotchar ? resultnextchar : resultnotnextchar);
+          },
+
+          // This function implements an ifblank macro.
+          IfblankFunction(parser, name) {
+             const blankarg = parser.GetArgument(name);
+             const resultblank = parser.GetArgument(name);
+             const resultnotblank = parser.GetArgument(name);
+             const isblank = (blankarg.trim() == "");
+             useArgument(parser, isblank ? resultblank : resultnotblank);
+          },
+
+          // This function implements an ifstrequal macro.
+          IfstrequalFunction(parser, name) {
+             const strequalfirst = parser.GetArgument(name);
+             const strequalsecond = parser.GetArgument(name);
+             const resultequal = parser.GetArgument(name);
+             const resultnotequal = parser.GetArgument(name);
+             const isequal = (strequalfirst == strequalsecond);
+             useArgument(parser, isequal ? resultequal : resultnotequal);
+          },
+
+          // This function implements a gsub macro.
+          GsubstituteFunction(parser, name) {
+             const gsubfirst = parser.GetArgument(name);
+             const gsubsecond = parser.GetArgument(name);
+             const gsubthird = parser.GetArgument(name);
+             let gsubresult=gsubfirst.replace(gsubsecond, gsubthird);
+             useArgument(parser, gsubresult);
+          },
+
+          // This function modifies the equation numbers.
+          SeteqnumberFunction(parser, name) {
+              // Get the macro parameters
+              const star = parser.GetStar();                  // true if there is a *
+              const optBrackets = parser.GetBrackets(name);   // contents of optional brackets
+              const newsubequations = parser.GetArgument(name); // the subequations argument
+              const neweqsection = parser.GetArgument(name); // the eq section argument
+              const neweqnumber = parser.GetArgument(name);   // the eq number argument
+              MathJax.config.subequations=newsubequations ;   // a string with boolean meaning
+              MathJax.config.section=neweqsection ;           // a string with numeric meaning
+              parser.tags.counter = parser.tags.allCounter = neweqnumber ;
+          }
+
+        });
+
+        // Create the Lwarp-macros package
+        Configuration.create('Lwarp-macros', {
+          handler: {macro: ['Lwarp-macros']}
+        });
+
+        MathJax.startup.defaultReady();
+
+        // For forward references:
+        MathJax.startup.input[0].preFilters.add(({math}) => {
+          if (math.inputData.recompile){
+              MathJax.config.subequations = math.inputData.recompile.subequations;
+              MathJax.config.section = math.inputData.recompile.section;
+          }
+        });
+        MathJax.startup.input[0].postFilters.add(({math}) => {
+          if (math.inputData.recompile){
+              math.inputData.recompile.subequations = MathJax.config.subequations;
+              math.inputData.recompile.section = MathJax.config.section;
+          }
+        });
+
+          // For \left, \right with unicode-math:
+          const {DelimiterMap} = MathJax._.input.tex.SymbolMap;
+          const {Symbol} = MathJax._.input.tex.Symbol;
+          const {MapHandler} = MathJax._.input.tex.MapHandler;
+          const delimiter = MapHandler.getMap('delimiter');
+          delimiter.add('\\lBrack', new Symbol('\\lBrack', '\u27E6'));
+          delimiter.add('\\rBrack', new Symbol('\\rBrack', '\u27E7'));
+          delimiter.add('\\lAngle', new Symbol('\\lAngle', '\u27EA'));
+          delimiter.add('\\rAngle', new Symbol('\\rAngle', '\u27EB'));
+          delimiter.add('\\lbrbrak', new Symbol('\\lbrbrak', '\u2772'));
+          delimiter.add('\\rbrbrak', new Symbol('\\rbrbrak', '\u2773'));
+          delimiter.add('\\lbag', new Symbol('\\lbag', '\u27C5'));
+          delimiter.add('\\rbag', new Symbol('\\rbag', '\u27C6'));
+          delimiter.add('\\llparenthesis', new Symbol('\\llparenthesis', '\u2987'));
+          delimiter.add('\\rrparenthesis', new Symbol('\\rrparenthesis', '\u2988'));
+          delimiter.add('\\llangle', new Symbol('\\llangle', '\u2989'));
+          delimiter.add('\\rrangle', new Symbol('\\rrangle', '\u298A'));
+          delimiter.add('\\Lbrbrak', new Symbol('\\Lbrbrak', '\u27EC'));
+          delimiter.add('\\Rbrbrak', new Symbol('\\Rbrbrak', '\u27ED'));
+          delimiter.add('\\lBrace', new Symbol('\\lBrace', '\u2983'));
+          delimiter.add('\\rBrace', new Symbol('\\rBrace', '\u2984'));
+          delimiter.add('\\lParen', new Symbol('\\lParen', '\u2985'));
+          delimiter.add('\\rParen', new Symbol('\\rParen', '\u2986'));
+          delimiter.add('\\lbrackubar', new Symbol('\\lbrackubar', '\u298B'));
+          delimiter.add('\\rbrackubar', new Symbol('\\rbrackubar', '\u298C'));
+          delimiter.add('\\lbrackultick', new Symbol('\\lbrackultick', '\u298D'));
+          delimiter.add('\\rbracklrtick', new Symbol('\\rbracklrtick', '\u298E'));
+          delimiter.add('\\lbracklltick', new Symbol('\\lbracklltick', '\u298F'));
+          delimiter.add('\\rbrackurtick', new Symbol('\\rbrackurtick', '\u2990'));
+          delimiter.add('\\langledot', new Symbol('\\langledot', '\u2991'));
+          delimiter.add('\\rangledot', new Symbol('\\rangledot', '\u2992'));
+          delimiter.add('\\lparenless', new Symbol('\\lparenless', '\u2993'));
+          delimiter.add('\\rparengtr', new Symbol('\\rparengtr', '\u2994'));
+          delimiter.add('\\Lparengtr', new Symbol('\\Lparengtr', '\u2995'));
+          delimiter.add('\\Rparenless', new Symbol('\\Rparenless', '\u2996'));
+          delimiter.add('\\lblkbrbrak', new Symbol('\\lblkbrbrak', '\u2997'));
+          delimiter.add('\\rblkbrbrak', new Symbol('\\rblkbrbrak', '\u2998'));
+          delimiter.add('\\lvzigzag', new Symbol('\\lvzigzag', '\u29D8'));
+          delimiter.add('\\rvzigzag', new Symbol('\\rvzigzag', '\u29D9'));
+          delimiter.add('\\Lvzigzag', new Symbol('\\Lvzigzag', '\u29DA'));
+          delimiter.add('\\Rvzigzag', new Symbol('\\Rvzigzag', '\u29DB'));
+          delimiter.add('\\lcurvyangle', new Symbol('\\lcurvyangle', '\u29FC'));
+          delimiter.add('\\rcurvyangle', new Symbol('\\rcurvyangle', '\u29FD'));
+          delimiter.add('\\Vvert', new Symbol('\\Vvert', '\u2980'));
+    }     // ready
+  },      // startup
+
+  tex: {
+    packages: {'[+]': ['tagformat', 'Lwarp-macros', 'textmacros']},
+    tags: "ams",
+         tagformat: {
+             number: function (n) {
+                 if(MathJax.config.subequations==0)
+                      return(MathJax.config.section + n);
+                 else
+                      return(MathJax.config.section + String.fromCharCode(96+n));
+             },
+         },
+  }
+}
+</script>
+
+<script
+    id="MathJax-script"
+    src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"
+></script>
+
+</head>
+<body>
+
+
+<div class="bodywithoutsidetoc">
+
+
+<main class="bodycontainer">
+
+
+<section class="textbody">
+
+<a id="runs-autofile-0"></a>
+
+<!--MathJax customizations:-->
+<div data-nosnippet
+    style="display:none"
+>
+
+\(\newcommand{\footnotename}{footnote}\)
+
+\(\def \LWRfootnote {1}\)
+
+\(\newcommand {\footnote }[2][\LWRfootnote ]{{}^{\mathrm {#1}}}\)
+
+\(\newcommand {\footnotemark }[1][\LWRfootnote ]{{}^{\mathrm {#1}}}\)
+
+\(\let \LWRorighspace \hspace \)
+
+\(\renewcommand {\hspace }{\ifstar \LWRorighspace \LWRorighspace }\)
+
+\(\newcommand {\TextOrMath }[2]{#2}\)
+
+\(\newcommand {\mathnormal }[1]{{#1}}\)
+
+\(\newcommand \ensuremath [1]{#1}\)
+
+\(\newcommand {\LWRframebox }[2][]{\fbox {#2}} \newcommand {\framebox }[1][]{\LWRframebox } \)
+
+\(\newcommand {\setlength }[2]{}\)
+
+\(\newcommand {\addtolength }[2]{}\)
+
+\(\newcommand {\setcounter }[2]{}\)
+
+\(\newcommand {\addtocounter }[2]{}\)
+
+\(\newcommand {\arabic }[1]{}\)
+
+\(\newcommand {\number }[1]{}\)
+
+\(\newcommand {\noalign }[1]{\text {#1}\notag \\}\)
+
+\(\newcommand {\cline }[1]{}\)
+
+\(\newcommand {\directlua }[1]{\text {(directlua)}}\)
+
+\(\newcommand {\luatexdirectlua }[1]{\text {(directlua)}}\)
+
+\(\newcommand {\protect }{}\)
+
+\(\def \LWRabsorbnumber #1 {}\)
+
+\(\def \LWRabsorbquotenumber &quot;#1 {}\)
+
+\(\newcommand {\LWRabsorboption }[1][]{}\)
+
+\(\newcommand {\LWRabsorbtwooptions }[1][]{\LWRabsorboption }\)
+
+\(\def \mathchar {\ifnextchar &quot;\LWRabsorbquotenumber \LWRabsorbnumber }\)
+
+\(\def \mathcode #1={\mathchar }\)
+
+\(\let \delcode \mathcode \)
+
+\(\let \delimiter \mathchar \)
+
+\(\def \oe {\unicode {x0153}}\)
+
+\(\def \OE {\unicode {x0152}}\)
+
+\(\def \ae {\unicode {x00E6}}\)
+
+\(\def \AE {\unicode {x00C6}}\)
+
+\(\def \aa {\unicode {x00E5}}\)
+
+\(\def \AA {\unicode {x00C5}}\)
+
+\(\def \o {\unicode {x00F8}}\)
+
+\(\def \O {\unicode {x00D8}}\)
+
+\(\def \l {\unicode {x0142}}\)
+
+\(\def \L {\unicode {x0141}}\)
+
+\(\def \ss {\unicode {x00DF}}\)
+
+\(\def \SS {\unicode {x1E9E}}\)
+
+\(\def \dag {\unicode {x2020}}\)
+
+\(\def \ddag {\unicode {x2021}}\)
+
+\(\def \P {\unicode {x00B6}}\)
+
+\(\def \copyright {\unicode {x00A9}}\)
+
+\(\def \pounds {\unicode {x00A3}}\)
+
+\(\let \LWRref \ref \)
+
+\(\renewcommand {\ref }{\ifstar \LWRref \LWRref }\)
+
+\( \newcommand {\multicolumn }[3]{#3}\)
+
+\(\require {textcomp}\)
+
+\(\newcommand {\intertext }[1]{\text {#1}\notag \\}\)
+
+\(\let \Hat \hat \)
+
+\(\let \Check \check \)
+
+\(\let \Tilde \tilde \)
+
+\(\let \Acute \acute \)
+
+\(\let \Grave \grave \)
+
+\(\let \Dot \dot \)
+
+\(\let \Ddot \ddot \)
+
+\(\let \Breve \breve \)
+
+\(\let \Bar \bar \)
+
+\(\let \Vec \vec \)
+
+\(\newcommand {\LWRsubmultirow }[2][]{#2}\)
+
+\(\newcommand {\LWRmultirow }[2][]{\LWRsubmultirow }\)
+
+\(\newcommand {\multirow }[2][]{\LWRmultirow }\)
+
+\(\newcommand {\mrowcell }{}\)
+
+\(\newcommand {\mcolrowcell }{}\)
+
+\(\newcommand {\STneed }[1]{}\)
+
+\(\newcommand {\Expc }{\mathop {\textrm {E}}}\)
+
+\(\newcommand {\Var }{\mathop {\textrm {Var}}}\)
+
+\(\newcommand {\bbar }{\rule [-2.5pt]{1.5pt}{10pt}}\)
+
+</div>
+
+<a id="runs-autopage-1"></a>
+<div class="titlepage">
+
+<h1>Runs of Ones in Binary Strings</h1>
+
+
+<div class="author">
+
+
+<div class="oneauthor">
+
+<p>
+Félix Balado and Guénolé Silvestre
+</p>
+</div>
+
+</div>
+
+
+<div class="titledate">
+
+<p>
+February 20th, 2023
+</p>
+</div>
+
+</div>
+
+<p>
+<i>Update (March 2026): many more results about runs in binary strings can be found in our <a href="https://arxiv.org/abs/2602.10005" target="_blank" >latest paper</a>. See also <a href="https://fbalado.github.io/chicken/chicken_run.html"
+target="_blank" >“In for the long run”</a>. </i>
+</p>
+<!--
+...... section Introduction ......
+-->
+<h4 id="autosec-3"><span class="sectionnumber">1&#x2003;</span>Introduction</h4>
+<a id="runs-autopage-3"></a>
+
+
+<p>
+A run of ones in a binary string is an uninterrupted sequence of ones flanked on each side either by a zero or by the start/end of the string (Mood’s criterion&nbsp;[<a href="runs.html#LWR-ht-cite.0@mood40:_distr_theor_runs">1</a>]). In the following, a run of ones
+will be simply referred to as a “run”.
+</p>
+
+<p>
+What is the total number of runs of length \(i\) over all binary \(n\)-strings, or equivalently, if we draw binary \(n\)-strings uniformly at random, what is the expected number of runs of length \(i\) in a binary \(n\)-string?
+</p>
+
+<p>
+This problem was previously solved by Sinha and Sinha&nbsp;[<a href="runs.html#LWR-ht-cite.0@sinha12:_energy">2</a>] —in fact, these authors also solved a harder problem in&nbsp;[<a href="runs.html#LWR-ht-cite.0@sinha09">3</a>] from which the solution to
+the problem addressed here can be produced.
+</p>
+
+<p>
+Here we wish to show that the solution can be found in shorter and simpler ways than in&nbsp;[<a href="runs.html#LWR-ht-cite.0@sinha09">3</a>] or&nbsp;[<a href="runs.html#LWR-ht-cite.0@sinha12:_energy">2</a>] (see also&nbsp;[<a
+href="runs.html#LWR-ht-cite.0@makri12:_count_runs_ones_ones_runs">4</a>]). We give three different solutions: two of them use elementary counting arguments (recursive and combinatorial solutions), while the third one is probabilistic.
+</p>
+<!--
+...... section Counting Runs Recursively ......
+-->
+<h4 id="autosec-4"><span class="sectionnumber">2&#x2003;</span>Counting Runs Recursively</h4>
+<a id="runs-autopage-4"></a>
+
+
+<a id="sec:counting-runs"></a>
+
+<p>
+Let \(r_n(i)\) be the total number of runs of length \(i\) over all binary \(n\)-strings.
+</p>
+
+<p>
+First of all, let us get some visual intuition. In the diagrams below, for \(n=2,3\) and \(4\) we list all binary \(n\)-strings and, right underneath, their runs “spectra” (i.e. the number of runs of lengths \(1\) to \(n\) found in each particular \(n\)-string). On the right we
+show \(r_n(i)\).
+</p>
+
+<ul class="itemize" style="list-style-type:none">
+
+<li>
+<p>
+<span class="listmarker">•</span> \(n=2\):
+</p>
+<div class="center">
+<table>
+<tr style="display:none"><th>.</th></tr>
+
+<tr>
+<td class="tdc"></td>
+<td class="tdc">0</td>
+<td class="tdc">0</td>
+<td class="tdc">1</td>
+<td class="tdc">1</td>
+<td class="tdc"></td>
+</tr>
+
+<tr>
+<td class="tdc"></td>
+<td class="tdc">0</td>
+<td class="tdc">1</td>
+<td class="tdc">0</td>
+<td class="tdc">1</td>
+<td class="tdc"></td>
+</tr>
+
+<tr class="hline">
+<td class="tdc">\(i\)</td>
+<td class="tdc"></td>
+<td class="tdc"></td>
+<td class="tdc"></td>
+<td class="tdc"></td>
+<td class="tdc">\(r_2(i)\)</td>
+</tr>
+
+<tr class="hline">
+<td colspan="1" class="tdc tvertbarr" style="border-right: 1px solid black">1</td>
+<td class="tdc">0</td>
+<td class="tdc">1</td>
+<td class="tdc">1</td>
+<td class="tdc">0</td>
+<td colspan="1" class="tdc tvertbarl" style="border-left: 1px solid black">2</td>
+</tr>
+
+<tr>
+<td colspan="1" class="tdc tvertbarr" style="border-right: 1px solid black">2</td>
+<td class="tdc">0</td>
+<td class="tdc">0</td>
+<td class="tdc">0</td>
+<td class="tdc">1</td>
+<td colspan="1" class="tdc tvertbarl" style="border-left: 1px solid black">1</td>
+</tr>
+
+</table>
+</div>
+</li>
+<li>
+
+<p>
+<span class="listmarker">•</span> \(n=3\):
+</p>
+<div class="center">
+<table>
+<tr style="display:none"><th>.</th></tr>
+
+<tr>
+<td class="tdc"></td>
+<td class="tdc">0</td>
+<td class="tdc">0</td>
+<td class="tdc">0</td>
+<td class="tdc">0</td>
+<td class="tdc">1</td>
+<td class="tdc">1</td>
+<td class="tdc">1</td>
+<td class="tdc">1</td>
+<td class="tdc"></td>
+</tr>
+
+<tr>
+<td class="tdc"></td>
+<td class="tdc">0</td>
+<td class="tdc">0</td>
+<td class="tdc">1</td>
+<td class="tdc">1</td>
+<td class="tdc">0</td>
+<td class="tdc">0</td>
+<td class="tdc">1</td>
+<td class="tdc">1</td>
+<td class="tdc"></td>
+</tr>
+
+<tr>
+<td class="tdc"></td>
+<td class="tdc">0</td>
+<td class="tdc">1</td>
+<td class="tdc">0</td>
+<td class="tdc">1</td>
+<td class="tdc">0</td>
+<td class="tdc">1</td>
+<td class="tdc">0</td>
+<td class="tdc">1</td>
+<td class="tdc"></td>
+</tr>
+
+<tr class="hline">
+<td class="tdc">\(i\)</td>
+<td class="tdc"></td>
+<td class="tdc"></td>
+<td class="tdc"></td>
+<td class="tdc"></td>
+<td class="tdc"></td>
+<td class="tdc"></td>
+<td class="tdc"></td>
+<td class="tdc"></td>
+<td class="tdc">\(r_3(i)\)</td>
+</tr>
+
+<tr class="hline">
+<td colspan="1" class="tdc tvertbarr" style="border-right: 1px solid black">1</td>
+<td class="tdc">0</td>
+<td class="tdc">1</td>
+<td class="tdc">1</td>
+<td class="tdc">0</td>
+<td class="tdc">1</td>
+<td class="tdc">2</td>
+<td class="tdc">0</td>
+<td class="tdc">0</td>
+<td colspan="1" class="tdc tvertbarl" style="border-left: 1px solid black">5</td>
+</tr>
+
+<tr>
+<td colspan="1" class="tdc tvertbarr" style="border-right: 1px solid black">2</td>
+<td class="tdc">0</td>
+<td class="tdc">0</td>
+<td class="tdc">0</td>
+<td class="tdc">1</td>
+<td class="tdc">0</td>
+<td class="tdc">0</td>
+<td class="tdc">1</td>
+<td class="tdc">0</td>
+<td colspan="1" class="tdc tvertbarl" style="border-left: 1px solid black">2</td>
+</tr>
+
+<tr>
+<td colspan="1" class="tdc tvertbarr" style="border-right: 1px solid black">3</td>
+<td class="tdc">0</td>
+<td class="tdc">0</td>
+<td class="tdc">0</td>
+<td class="tdc">0</td>
+<td class="tdc">0</td>
+<td class="tdc">0</td>
+<td class="tdc">0</td>
+<td class="tdc">1</td>
+<td colspan="1" class="tdc tvertbarl" style="border-left: 1px solid black">1</td>
+</tr>
+
+</table>
+</div>
+</li>
+<li>
+
+<p>
+<span class="listmarker">•</span> \(n=4\):
+</p>
+<div class="center">
+<table>
+<tr style="display:none"><th>.</th></tr>
+
+<tr>
+<td class="tdc"></td>
+<td class="tdc">0</td>
+<td class="tdc">0</td>
+<td class="tdc">0</td>
+<td class="tdc">0</td>
+<td class="tdc">0</td>
+<td class="tdc">0</td>
+<td class="tdc">0</td>
+<td class="tdc">0</td>
+<td class="tdc">1</td>
+<td class="tdc">1</td>
+<td class="tdc">1</td>
+<td class="tdc">1</td>
+<td class="tdc">1</td>
+<td class="tdc">1</td>
+<td class="tdc">1</td>
+<td class="tdc">1</td>
+<td class="tdc"></td>
+</tr>
+
+<tr>
+<td class="tdc"></td>
+<td class="tdc">0</td>
+<td class="tdc">0</td>
+<td class="tdc">0</td>
+<td class="tdc">0</td>
+<td class="tdc">1</td>
+<td class="tdc">1</td>
+<td class="tdc">1</td>
+<td class="tdc">1</td>
+<td class="tdc">0</td>
+<td class="tdc">0</td>
+<td class="tdc">0</td>
+<td class="tdc">0</td>
+<td class="tdc">1</td>
+<td class="tdc">1</td>
+<td class="tdc">1</td>
+<td class="tdc">1</td>
+<td class="tdc"></td>
+</tr>
+
+<tr>
+<td class="tdc"></td>
+<td class="tdc">0</td>
+<td class="tdc">0</td>
+<td class="tdc">1</td>
+<td class="tdc">1</td>
+<td class="tdc">0</td>
+<td class="tdc">0</td>
+<td class="tdc">1</td>
+<td class="tdc">1</td>
+<td class="tdc">0</td>
+<td class="tdc">0</td>
+<td class="tdc">1</td>
+<td class="tdc">1</td>
+<td class="tdc">0</td>
+<td class="tdc">0</td>
+<td class="tdc">1</td>
+<td class="tdc">1</td>
+<td class="tdc"></td>
+</tr>
+
+<tr>
+<td class="tdc"></td>
+<td class="tdc">0</td>
+<td class="tdc">1</td>
+<td class="tdc">0</td>
+<td class="tdc">1</td>
+<td class="tdc">0</td>
+<td class="tdc">1</td>
+<td class="tdc">0</td>
+<td class="tdc">1</td>
+<td class="tdc">0</td>
+<td class="tdc">1</td>
+<td class="tdc">0</td>
+<td class="tdc">1</td>
+<td class="tdc">0</td>
+<td class="tdc">1</td>
+<td class="tdc">0</td>
+<td class="tdc">1</td>
+<td class="tdc"></td>
+</tr>
+
+<tr class="hline">
+<td class="tdc">\(i\)</td>
+<td class="tdc"></td>
+<td class="tdc"></td>
+<td class="tdc"></td>
+<td class="tdc"></td>
+<td class="tdc"></td>
+<td class="tdc"></td>
+<td class="tdc"></td>
+<td class="tdc"></td>
+<td class="tdc"></td>
+<td class="tdc"></td>
+<td class="tdc"></td>
+<td class="tdc"></td>
+<td class="tdc"></td>
+<td class="tdc"></td>
+<td class="tdc"></td>
+<td class="tdc"></td>
+<td class="tdc">\(r_4(i)\)</td>
+</tr>
+
+<tr class="hline">
+<td colspan="1" class="tdc tvertbarr" style="border-right: 1px solid black">1</td>
+<td class="tdc">0</td>
+<td class="tdc">1</td>
+<td class="tdc">1</td>
+<td class="tdc">0</td>
+<td class="tdc">1</td>
+<td class="tdc">2</td>
+<td class="tdc">0</td>
+<td class="tdc">0</td>
+<td class="tdc">1</td>
+<td class="tdc">2</td>
+<td class="tdc">2</td>
+<td class="tdc">1</td>
+<td class="tdc">0</td>
+<td class="tdc">1</td>
+<td class="tdc">0</td>
+<td class="tdc">0</td>
+<td colspan="1" class="tdc tvertbarl" style="border-left: 1px solid black">12</td>
+</tr>
+
+<tr>
+<td colspan="1" class="tdc tvertbarr" style="border-right: 1px solid black">2</td>
+<td class="tdc">0</td>
+<td class="tdc">0</td>
+<td class="tdc">0</td>
+<td class="tdc">1</td>
+<td class="tdc">0</td>
+<td class="tdc">0</td>
+<td class="tdc">1</td>
+<td class="tdc">0</td>
+<td class="tdc">0</td>
+<td class="tdc">0</td>
+<td class="tdc">0</td>
+<td class="tdc">1</td>
+<td class="tdc">1</td>
+<td class="tdc">1</td>
+<td class="tdc">0</td>
+<td class="tdc">0</td>
+<td colspan="1" class="tdc tvertbarl" style="border-left: 1px solid black">5</td>
+</tr>
+
+<tr>
+<td colspan="1" class="tdc tvertbarr" style="border-right: 1px solid black">3</td>
+<td class="tdc">0</td>
+<td class="tdc">0</td>
+<td class="tdc">0</td>
+<td class="tdc">0</td>
+<td class="tdc">0</td>
+<td class="tdc">0</td>
+<td class="tdc">0</td>
+<td class="tdc">1</td>
+<td class="tdc">0</td>
+<td class="tdc">0</td>
+<td class="tdc">0</td>
+<td class="tdc">0</td>
+<td class="tdc">0</td>
+<td class="tdc">0</td>
+<td class="tdc">1</td>
+<td class="tdc">0</td>
+<td colspan="1" class="tdc tvertbarl" style="border-left: 1px solid black">2</td>
+</tr>
+
+<tr>
+<td colspan="1" class="tdc tvertbarr" style="border-right: 1px solid black">4</td>
+<td class="tdc">0</td>
+<td class="tdc">0</td>
+<td class="tdc">0</td>
+<td class="tdc">0</td>
+<td class="tdc">0</td>
+<td class="tdc">0</td>
+<td class="tdc">0</td>
+<td class="tdc">0</td>
+<td class="tdc">0</td>
+<td class="tdc">0</td>
+<td class="tdc">0</td>
+<td class="tdc">0</td>
+<td class="tdc">0</td>
+<td class="tdc">0</td>
+<td class="tdc">0</td>
+<td class="tdc">1</td>
+<td colspan="1" class="tdc tvertbarl" style="border-left: 1px solid black">1</td>
+</tr>
+
+</table>
+</div>
+</li>
+</ul>
+
+<p>
+Assuming \(n&gt;1\), it is trivial to see that
+</p>
+<span class="hidden"> \(\seteqnumber{0}{}{0}\)</span>
+
+
+<!--
+
+
+                                                                                                                                     rn (n) = 1,
+                                                                                                                              rn (n − 1) = 2.                                                                           (1)             --><a id="eq:rnnm1"></a><!--
+
+
+-->
+
+
+<p>
+
+\begin{align}
+r_n(n)&amp;=1,\nonumber \\ r_n(n-1)&amp;=2.\label {eq:rnnm1}
+\end{align}
+This solves the problem for \(n=2\). Assuming \(n&gt;2\), let us next see how, for \(1\le i&lt;n-1\), \(r_n(i)\) can be recursively obtained from \(r_{n-1}(i)\):
+</p>
+
+<ul class="itemize" style="list-style-type:none">
+
+<li>
+<p>
+<span class="listmarker">•</span> On the one hand, consider the \(n\)-strings that start with a zero: these trivially contribute \(r_{n-1}(i)\) runs to \(r_n(i)\).
+</p>
+
+</li>
+<li>
+
+<p>
+<span class="listmarker">•</span> On the other hand, consider the \(n\)-strings that start with a one. For \(1\le i \le n-1\), the \(2^{n-i-1}\) \(n\)-strings that start with \(i\)&nbsp;ones followed by at least one zero add \(2^{n-i-1}\) runs to \(r_{n-1}(i)\) if
+\(i&lt;n-1\), and subtract \(2^{n-i-1}\) runs from \(r_{n-1}(i-1)\) if \(i&gt;1\).
+</p>
+<p>
+Thus, the \(n\)-strings that start with a one contribute \(r_{n-1}(i)+2^{n-i-1}-2^{n-i-2}=r_{n-1}(i)+2^{n-i-2}\) runs to \(r_n(i)\).
+</p>
+<p>
+
+</p>
+</li>
+</ul>
+
+<p>
+So, collecting these two contributions we have that
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{}{1}\)</span>
+
+<!--
+
+
+                                                                                                                      rn (i) = 2 rn−1 (i) + 2n−i−2 .                                                                        (2)            --><a id="eq:rec"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:rec} r_{n}(i)= 2\,r_{n-1}(i)+2^{n-i-2}.
+\end{equation}
+
+</p>
+
+<p>
+Now, by using the expression above recursively \(k\) times, with \(k&lt; n-i\), we get
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{}{2}\)</span>
+
+<!--
+
+
+                                                                                                                     rn (i) = 2k rn−k (i) + k 2n−i−2 .                                                                     (3)            --><a id="eq:rn_k"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:rn_k} r_n(i)=2^k r_{n-k}(i)+ k\, 2^{n-i-2}.
+\end{equation}
+
+</p>
+
+<p>
+When \(k=n-i-1\), we have that \(r_{n-k}(i)=r_{i+1}(i)=2\) because of&nbsp;<span class="textup">(<a href="runs.html#eq:rnnm1">1</a>)</span>. Thus, inputting this value of \(k\) in&nbsp;<span class="textup">(<a href="runs.html#eq:rn_k">3</a>)</span>
+we get the following explicit expression for the number of runs of ones of length \(i\) over all binary \(n\)-strings:
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{}{3}\)</span>
+
+<!--
+
+
+                                                                                                                       rn (i) = (n − i + 3) 2n−i−2 ,                                                                          (4)           --><a id="eq:rn"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:rn} r_n(i)=(n-i+3)\,2^{n-i-2},
+\end{equation}
+
+</p>
+
+<p>
+where \(1\le i&lt;n-1\). Incidentally,&nbsp;<span class="textup">(<a href="runs.html#eq:rn">4</a>)</span> is also valid when \(i=n-1\), i.e. it includes&nbsp;<span class="textup">(<a href="runs.html#eq:rnnm1">1</a>)</span>. Furthermore, we can see
+from&nbsp;<span class="textup">(<a href="runs.html#eq:rn">4</a>)</span> that \(r_{n-1}(i-1)=r_n(i)\) for \(n\ge 2\), and so recurrence&nbsp;<span class="textup">(<a href="runs.html#eq:rec">2</a>)</span> can alternatively be expressed as a recurrence
+on&nbsp;\(i\) for a given \(n\) (rather than as a recurrence on \(n\) for a given \(i\)) as
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{}{4}\)</span>
+
+<!--
+
+
+                                                                                                                      rn (i) = 2 rn (i + 1) + 2n−i−2 .                                                               (5)              --><a id="eq:rec_alt"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+r_{n}(i)= 2\,r_{n}(i+1)+2^{n-i-2}.\label {eq:rec_alt}
+\end{equation}
+
+</p>
+
+<p>
+Also, the total number of runs over all \(n\)-strings is
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{}{5}\)</span>
+
+<!--
+
+                                                                                                                             n
+                                                                                                                             X
+                                                                                                                    t(n) =         rn (i) = (n + 1) 2n−2 .                                                              (6)             --><a id="eq:total"></a><!--
+                                                                                                                             i=1
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:total} t(n)=\sum _{i=1}^n r_n(i)=(n+1)\,2^{n-2}.
+\end{equation}
+
+</p>
+
+<p>
+Recursion&nbsp;<span class="textup">(<a href="runs.html#eq:rec">2</a>)</span> was previously given in&nbsp;<a id="runs-autopage-10"></a>[<a href="runs.html#LWR-ht-cite.0@sinha12:_energy">2</a>] and&nbsp;[<a
+href="runs.html#LWR-ht-cite.0@makri12:_count_runs_ones_ones_runs">4</a>]. Also&nbsp;<span class="textup">(<a href="runs.html#eq:rn">4</a>)</span> and&nbsp;<span class="textup">(<a href="runs.html#eq:total">6</a>)</span> were given in&nbsp;[<a
+href="runs.html#LWR-ht-cite.0@sinha12:_energy">2</a>].
+</p>
+<!--
+...... section Counting Runs Using Combinatorics ......
+-->
+<h4 id="autosec-11"><span class="sectionnumber">3&#x2003;</span>Counting Runs Using Combinatorics</h4>
+<a id="runs-autopage-11"></a>
+
+
+<a id="sec:counting-runs-using"></a>
+
+<p>
+Let us now give a way to obtain&nbsp;<span class="textup">(<a href="runs.html#eq:total">6</a>)</span> directly by using combinatorics, i.e. without relying on&nbsp;<span class="textup">(<a href="runs.html#eq:rn">4</a>)</span>. Consider the partitioning
+of an arbitrary \(n\)-string into \(p\) nonempty substrings, where \(1\le p\le n\). As shown in the example below, in which the \(n\)-string is represented by \(n\) asterisks and the \(p\) partitions by \(p+1\) vertical bars, we can put that partition into a bijection with
+\(p\) runs of ones from binary \(n\)-strings:
+</p>
+<div class="center">
+<table>
+
+<tr style="display:none"><th>.</th></tr>
+
+<tr>
+<td class="tdc">\(\mid \)</td>
+<td class="tdc">\(*\)</td>
+<td class="tdc">\(*\)</td>
+<td class="tdc">\(*\)</td>
+<td class="tdc">\(\mid \)</td>
+<td class="tdc">\(*\)</td>
+<td class="tdc">\(*\)</td>
+<td class="tdc">\(*\)</td>
+<td class="tdc">\(*\)</td>
+<td class="tdc">\(\mid \)</td>
+<td class="tdc">\(*\)</td>
+<td class="tdc">\(*\)</td>
+<td class="tdc">\(\mid \)</td>
+<td class="tdc">\(*\)</td>
+<td class="tdc">\(*\)</td>
+<td class="tdc">\(*\)</td>
+<td class="tdc">\(*\)</td>
+<td class="tdc">\(*\)</td>
+<td class="tdc">\(\mid \)</td>
+<td class="tdc">\(\cdots \)</td>
+<td class="tdc">\(\mid \)</td>
+<td class="tdc">\(*\)</td>
+<td class="tdc">\(\mid \)</td>
+<td class="tdc">\(*\)</td>
+<td class="tdc">\(*\)</td>
+<td class="tdc">\(\mid \)</td>
+<td class="tdc"></td>
+</tr>
+
+<tr class="hline">
+<td class="tdc"></td>
+<td class="tdc">1</td>
+<td class="tdc">1</td>
+<td class="tdc">1</td>
+<td class="tdc"></td>
+<td class="tdc">0</td>
+<td class="tdc">0</td>
+<td class="tdc">0</td>
+<td class="tdc">0</td>
+<td class="tdc"></td>
+<td class="tdc">1</td>
+<td class="tdc">1</td>
+<td class="tdc"></td>
+<td class="tdc">0</td>
+<td class="tdc">0</td>
+<td class="tdc">0</td>
+<td class="tdc">0</td>
+<td class="tdc">0</td>
+<td class="tdc"></td>
+<td class="tdc">\(\cdots \)</td>
+<td class="tdc"></td>
+<td class="tdc">0</td>
+<td class="tdc"></td>
+<td class="tdc">1</td>
+<td class="tdc">1</td>
+<td class="tdc"></td>
+<td class="tdc"></td>
+</tr>
+
+<tr>
+<td class="tdc"></td>
+<td class="tdc">0</td>
+<td class="tdc">0</td>
+<td class="tdc">0</td>
+<td class="tdc"></td>
+<td class="tdc">1</td>
+<td class="tdc">1</td>
+<td class="tdc">1</td>
+<td class="tdc">1</td>
+<td class="tdc"></td>
+<td class="tdc">0</td>
+<td class="tdc">0</td>
+<td class="tdc"></td>
+<td class="tdc">1</td>
+<td class="tdc">1</td>
+<td class="tdc">1</td>
+<td class="tdc">1</td>
+<td class="tdc">1</td>
+<td class="tdc"></td>
+<td class="tdc">\(\cdots \)</td>
+<td class="tdc"></td>
+<td class="tdc">1</td>
+<td class="tdc"></td>
+<td class="tdc">0</td>
+<td class="tdc">0</td>
+<td class="tdc"></td>
+<td class="tdc"></td>
+</tr>
+
+</table>
+
+</div>
+
+<p>
+The number of ways in which we can partition an \(n\)-string into \(p\) nonempty substrings is \(n-1\choose p-1\). As we have \(p\) runs of ones associated to each of the \(n-1\choose p-1\) possibilities, the total number of runs over all binary \(n\)-strings is
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{}{6}\)</span>
+
+<!--
+
+                                                                                                                              Xn    n − 1
+                                                                                                                     t(n) =       p         = (n + 1) 2n−2 .                                                             (7)              --><a id="eq:total_alt"></a><!--
+                                                                                                                              p=1
+                                                                                                                                     p−1
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:total_alt} t(n)=\sum _{p=1}^{n} p \,{n-1\choose p-1}=(n+1)\,2^{n-2}.
+\end{equation}
+
+</p>
+
+<p>
+Next, let us exploit the parallelism between expressions&nbsp;<span class="textup">(<a href="runs.html#eq:rn">4</a>)</span> and&nbsp;<span class="textup">(<a href="runs.html#eq:total">6</a>)</span> to write \(r_n(i)\) in a way that echoes&nbsp;<span
+class="textup">(<a href="runs.html#eq:total_alt">7</a>)</span>. In order to do so, let us put <span class="textup">(<a href="runs.html#eq:rn">4</a>)</span> as the addition of the following two terms:
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{}{7}\)</span>
+
+<!--
+
+
+                                                                                                                    rn (i) = (n − i + 1) 2n−i−2 + 2n−i−1 .                                                             (8)              --><a id="eq:rn_expanded"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:rn_expanded} r_n(i)=(n-i+1)\,2^{n-i-2}+2^{n-i-1}.
+\end{equation}
+
+</p>
+
+<p>
+We can now see that the first term can be expanded using the same summation as in&nbsp;<span class="textup">(<a href="runs.html#eq:total_alt">7</a>)</span>. Interestingly, by using \(2^n=\sum _{k=0}^n {n\choose k}\), the second term can also be expanded
+into a summation with the same limits and over the same binomial coefficients as the first one, but without the \(p\) multiplication factors. Combining these two observations we can write&nbsp;<span class="textup">(<a
+href="runs.html#eq:rn_expanded">8</a>)</span> as follows:
+</p>
+<span class="hidden"> \(\seteqnumber{0}{}{8}\)</span>
+
+
+<!--
+
+
+                                                                                                                            n−i       n − i − 1       n−i
+                                                                                                                            X                           X    n − i − 1
+                                                                                                                 rn (i) =         p                 +
+                                                                                                                            p=1
+                                                                                                                                         p−1            p=1
+                                                                                                                                                                p−1
+                                                                                                                            n−i
+                                                                                                                            X       n − i − 1
+                                                                                                                       =    (p + 1)            .                                       (9)                                            --><a id="eq:rn_expanded_2"></a><!--
+                                                                                                                         p=1
+                                                                                                                                       p−1
+
+
+-->
+
+
+<p>
+
+\begin{align}
+r_n(i)&amp;=\sum _{p=1}^{n-i}p\, {n-i-1\choose p-1}+\sum _{p=1}^{n-i}{n-i-1\choose p-1}\nonumber \\ &amp;=\sum _{p=1}^{n-i}(p+1)\, {n-i-1\choose p-1}. \label {eq:rn_expanded_2}
+\end{align}
+Expression&nbsp;<span class="textup">(<a href="runs.html#eq:rn_expanded_2">9</a>)</span> literally tells us that there is a one-to-one correspondence between a partitioning of an arbitrary \((n-i)\)-string intro \(p\) nonempty substrings and \(p+1\) runs of
+length \(i\) from binary \(n\)-strings. This provides a simple combinatorial approach to obtaining&nbsp;<span class="textup">(<a href="runs.html#eq:rn">4</a>)</span>.
+</p>
+
+<p>
+In order to see how the bijection implied by&nbsp;<span class="textup">(<a href="runs.html#eq:rn_expanded_2">9</a>)</span> works we just need to place a run of ones of length \(i\) at each of the \(p+1\) possible positions in the partitioning (i.e. the \(p-1\)
+divisions plus the start and the end of the string) and then complete a binary \(n\)-string with alternating runs of ones and zeros having lengths determined by the partitioning.
+</p>
+
+<p>
+For example, let us take \(n=4\) and \(i=1\) and explicitly illustrate the correspondence between each of the possible partitionings of an arbitrary \(3\)-string “\(***\)” into&nbsp;\(p\)&nbsp;nonempty substrings and \(p+1\) runs of length \(1\) in binary \(4\)-strings:
+</p>
+<ul class="itemize" style="list-style-type:none">
+
+<li>
+<p>
+<span class="listmarker">•</span> \(p=1\) \(\to \) \({2\choose 0}=1\) partitioning associated with \(2\) runs of length \(1\)
+</p>
+<div class="flushleft">
+<table>
+<tr style="display:none"><th>.</th></tr>
+
+<tr>
+<td class="tdc">\(\mid \)</td>
+<td class="tdc">\(*\)</td>
+<td class="tdc">\(*\)</td>
+<td class="tdc">\(*\)</td>
+<td class="tdc">\(\mid \)</td>
+<td class="tdl"></td>
+</tr>
+
+<tr class="hline">
+<td class="tdc">\(\bbar \)</td>
+<td class="tdc">\(*\)</td>
+<td class="tdc">\(*\)</td>
+<td class="tdc">\(*\)</td>
+<td class="tdc">\(\mid \)</td>
+<td class="tdl">\(\mathbf {1}000\)</td>
+</tr>
+
+<tr>
+<td class="tdc">\(\mid \)</td>
+<td class="tdc">\(*\)</td>
+<td class="tdc">\(*\)</td>
+<td class="tdc">\(*\)</td>
+<td class="tdc">\(\bbar \)</td>
+<td class="tdl">\(000\mathbf {1}\)</td>
+</tr>
+</table>
+</div>
+</li>
+<li>
+
+<p>
+<span class="listmarker">•</span> \(p=2\) \(\to \) \({2\choose 1}=2\) partitionings, each associated with \(3\) runs of length \(1\):
+</p>
+<div class="flushleft">
+<table>
+<tr style="display:none"><th>.</th></tr>
+
+<tr>
+<td class="tdc">\(\mid \)</td>
+<td class="tdc">\(*\)</td>
+<td class="tdc">\(\mid \)</td>
+<td class="tdc">\(*\)</td>
+<td class="tdc">\(*\)</td>
+<td class="tdc">\(\mid \)</td>
+<td class="tdl"></td>
+</tr>
+
+<tr class="hline">
+<td class="tdc">\(\bbar \)</td>
+<td class="tdc">\(*\)</td>
+<td class="tdc">\(\mid \)</td>
+<td class="tdc">\(*\)</td>
+<td class="tdc">\(*\)</td>
+<td class="tdc">\(\mid \)</td>
+<td class="tdl">\(\mathbf {1}011\)</td>
+</tr>
+
+<tr>
+<td class="tdc">\(\mid \)</td>
+<td class="tdc">\(*\)</td>
+<td class="tdc">\(\bbar \)</td>
+<td class="tdc">\(*\)</td>
+<td class="tdc">\(*\)</td>
+<td class="tdc">\(\mid \)</td>
+<td class="tdl">\(0\mathbf {1}00\)</td>
+</tr>
+
+<tr>
+<td class="tdc">\(\mid \)</td>
+<td class="tdc">\(*\)</td>
+<td class="tdc">\(\mid \)</td>
+<td class="tdc">\(*\)</td>
+<td class="tdc">\(*\)</td>
+<td class="tdc">\(\bbar \)</td>
+<td class="tdl">\(100\mathbf {1}\)</td>
+</tr>
+</table>
+</div>
+<div class="flushleft">
+<table>
+<tr style="display:none"><th>.</th></tr>
+
+<tr>
+<td class="tdc">\(\mid \)</td>
+<td class="tdc">\(*\)</td>
+<td class="tdc">\(*\)</td>
+<td class="tdc">\(\mid \)</td>
+<td class="tdc">\(*\)</td>
+<td class="tdc">\(\mid \)</td>
+<td class="tdl"></td>
+</tr>
+
+<tr class="hline">
+<td class="tdc">\(\bbar \)</td>
+<td class="tdc">\(*\)</td>
+<td class="tdc">\(*\)</td>
+<td class="tdc">\(\mid \)</td>
+<td class="tdc">\(*\)</td>
+<td class="tdc">\(\mid \)</td>
+<td class="tdl">\(\mathbf {1}001\)</td>
+</tr>
+
+<tr>
+<td class="tdc">\(\mid \)</td>
+<td class="tdc">\(*\)</td>
+<td class="tdc">\(*\)</td>
+<td class="tdc">\(\bbar \)</td>
+<td class="tdc">\(*\)</td>
+<td class="tdc">\(\mid \)</td>
+<td class="tdl">\(00\mathbf {1}0\)</td>
+</tr>
+
+<tr>
+<td class="tdc">\(\mid \)</td>
+<td class="tdc">\(*\)</td>
+<td class="tdc">\(*\)</td>
+<td class="tdc">\(\mid \)</td>
+<td class="tdc">\(*\)</td>
+<td class="tdc">\(\bbar \)</td>
+<td class="tdl">\(110\mathbf {1}\)</td>
+</tr>
+
+</table>
+</div>
+</li>
+<li>
+
+<p>
+<span class="listmarker">•</span> \(p=3\) \(\to \) \({2\choose 2}=1\) partitioning, associated with \(4\) runs of length \(1\):
+</p>
+<div class="flushleft">
+<table>
+<tr style="display:none"><th>.</th></tr>
+
+<tr>
+<td class="tdc">\(\mid \)</td>
+<td class="tdc">\(*\)</td>
+<td class="tdc">\(\mid \)</td>
+<td class="tdc">\(*\)</td>
+<td class="tdc">\(\mid \)</td>
+<td class="tdc">\(*\)</td>
+<td class="tdc">\(\mid \)</td>
+<td class="tdl"></td>
+</tr>
+
+<tr class="hline">
+<td class="tdc">\(\bbar \)</td>
+<td class="tdc">\(*\)</td>
+<td class="tdc">\(\mid \)</td>
+<td class="tdc">\(*\)</td>
+<td class="tdc">\(\mid \)</td>
+<td class="tdc">\(*\)</td>
+<td class="tdc">\(\mid \)</td>
+<td class="tdl">\(\mathbf {1}010\)</td>
+</tr>
+
+<tr>
+<td class="tdc">\(\mid \)</td>
+<td class="tdc">\(*\)</td>
+<td class="tdc">\(\bbar \)</td>
+<td class="tdc">\(*\)</td>
+<td class="tdc">\(\mid \)</td>
+<td class="tdc">\(*\)</td>
+<td class="tdc">\(\mid \)</td>
+<td class="tdl">\(0\mathbf {1}01\)</td>
+</tr>
+
+<tr>
+<td class="tdc">\(\mid \)</td>
+<td class="tdc">\(*\)</td>
+<td class="tdc">\(\mid \)</td>
+<td class="tdc">\(*\)</td>
+<td class="tdc">\(\bbar \)</td>
+<td class="tdc">\(*\)</td>
+<td class="tdc">\(\mid \)</td>
+<td class="tdl">\(10\mathbf {1}0\)</td>
+</tr>
+
+<tr>
+<td class="tdc">\(\mid \)</td>
+<td class="tdc">\(*\)</td>
+<td class="tdc">\(\mid \)</td>
+<td class="tdc">\(*\)</td>
+<td class="tdc">\(\mid \)</td>
+<td class="tdc">\(*\)</td>
+<td class="tdc">\(\bbar \)</td>
+<td class="tdl">\(010\mathbf {1}\)</td>
+</tr>
+
+</table>
+</div>
+</li>
+</ul>
+
+<p>
+If \(n=4\) and \(i=2\) we look at the partitionings of “\(* *\)” into \(p\) nonempty substrings:
+</p>
+
+<ul class="itemize" style="list-style-type:none">
+
+<li>
+<p>
+<span class="listmarker">•</span> \(p=1\) \(\to \) \({1\choose 0}=1\) partitioning associated with \(2\) runs of length \(2\)
+</p>
+<div class="flushleft">
+<table>
+<tr style="display:none"><th>.</th></tr>
+
+<tr>
+<td class="tdc">\(\mid \)</td>
+<td class="tdc">\(*\)</td>
+<td class="tdc">\(*\)</td>
+<td class="tdc">\(\mid \)</td>
+<td class="tdl"></td>
+</tr>
+
+<tr class="hline">
+<td class="tdc">\(\bbar \)</td>
+<td class="tdc">\(*\)</td>
+<td class="tdc">\(*\)</td>
+<td class="tdc">\(\mid \)</td>
+<td class="tdl">\(\mathbf {11}00\)</td>
+</tr>
+
+<tr>
+<td class="tdc">\(\mid \)</td>
+<td class="tdc">\(*\)</td>
+<td class="tdc">\(*\)</td>
+<td class="tdc">\(\bbar \)</td>
+<td class="tdl">\(00\mathbf {11}\)</td>
+</tr>
+</table>
+</div>
+</li>
+<li>
+
+<p>
+<span class="listmarker">•</span> \(p=2\) \(\to \) \({1\choose 1}=1\) partitioning associated with \(3\) runs of length \(2\)
+</p>
+<div class="flushleft">
+<table>
+<tr style="display:none"><th>.</th></tr>
+
+<tr>
+<td class="tdc">\(\mid \)</td>
+<td class="tdc">\(*\)</td>
+<td class="tdc">\(\mid \)</td>
+<td class="tdc">\(*\)</td>
+<td class="tdc">\(\mid \)</td>
+<td class="tdl"></td>
+</tr>
+
+<tr class="hline">
+<td class="tdc">\(\bbar \)</td>
+<td class="tdc">\(*\)</td>
+<td class="tdc">\(\mid \)</td>
+<td class="tdc">\(*\)</td>
+<td class="tdc">\(\mid \)</td>
+<td class="tdl">\(\mathbf {11}01\)</td>
+</tr>
+
+<tr>
+<td class="tdc">\(\mid \)</td>
+<td class="tdc">\(*\)</td>
+<td class="tdc">\(\bbar \)</td>
+<td class="tdc">\(*\)</td>
+<td class="tdc">\(\mid \)</td>
+<td class="tdl">\(0\mathbf {11}0\)</td>
+</tr>
+
+<tr>
+<td class="tdc">\(\mid \)</td>
+<td class="tdc">\(*\)</td>
+<td class="tdc">\(\mid \)</td>
+<td class="tdc">\(*\)</td>
+<td class="tdc">\(\bbar \)</td>
+<td class="tdl">\(10\mathbf {11}\)</td>
+</tr>
+
+</table>
+</div>
+</li>
+</ul>
+
+<p>
+Finally, if we let the sum in&nbsp;<span class="textup">(<a href="runs.html#eq:rn_expanded_2">9</a>)</span> start at \(p=0\) rather than \(p=1\), then&nbsp;<span class="textup">(<a href="runs.html#eq:rn_expanded_2">9</a>)</span> also includes the
+case<sup>1</sup><a id="runs-autopage-25"></a> \(i=n\), whereas&nbsp;<span class="textup">(<a href="runs.html#eq:rn">4</a>)</span> is only valid for \(i\le n-1\).
+</p>
+<div role="note" class="footnotes">
+
+<a id="runs-autopage-26"></a>
+<p>
+<sup>1</sup>&nbsp;Using \({-1\choose -1}=1\)&nbsp;[<a href="runs.html#LWR-ht-cite.0@kronenburg11">5</a>] and \({t\choose -1}=0\) for all nonnegative integers&nbsp;\(t\).
+</p>
+
+
+</div>
+<!--
+...... section Counting Runs Probabilistically ......
+-->
+<h4 id="autosec-27"><span class="sectionnumber">4&#x2003;</span>Counting Runs Probabilistically</h4>
+<a id="runs-autopage-27"></a>
+
+
+<a id="sec:count-runs-prob"></a>
+
+<p>
+Assume that the binary \(n\)-strings are generated uniformly at random, and define&nbsp;\(n\) indicator random variables \(S_1,\ldots ,S_n\) such that \(S_k=1\) if a run of ones starts at the \(k\)-th position of the string and \(0\) otherwise. There are two cases for
+the probability of \(S_k\):
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{}{9}\)</span>
+
+<!--
+
+                                                                                                1
+                                                                                                    if k = 1
+                                                                                            
+                                                                             Pr(Sk = 1) =       2                ,                                                                             (10)                                            --><a id="eq:pr_sk"></a><!--
+                                                                                                1
+                                                                                                4
+                                                                                                    if 2 ≤ k ≤ n
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:pr_sk} \Pr (S_k=1)=\left \{ \begin{array}{l l} \frac {1}{2}&amp;\text { if } k=1\\ \frac {1}{4}&amp;\text { if } 2\le k\le n \end {array}\right .,
+\end{equation}
+
+</p>
+
+<p>
+as if a run starts at position \(k&gt;1\) then the previous bit must be zero. The total number of runs is thus given by r.v. \(T=\sum _{k=1}^n S_k\), whose expectation \(\Expc (T)=\sum _{k=1}^n \Expc (S_k)=\sum _{k=1}^n \Pr (S_k=1)\) is
+</p>
+<span class="hidden"> \(\seteqnumber{0}{}{10}\)</span>
+
+
+<!--
+
+
+                                                                                                                                E(T ) = (n + 1) 2−2 .                                                                  (11)                    --><a id="eq:exp_t"></a><!--
+
+
+-->
+
+
+<p>
+
+\begin{align}
+\label {eq:exp_t} \Expc (T)&amp;=(n+1)\,2^{-2}.
+\end{align}
+The rationale above was given by Alex Proscurin in&nbsp;<a href="https://math.stackexchange.com/questions/1048541/expected-value-of-a-run-of-a-random-bitstring" target="_blank" >Expected value of a run of a random bitstring</a>. As we can
+see,&nbsp;<span class="textup">(<a href="runs.html#eq:exp_t">11</a>)</span> is the normalisation of&nbsp;<span class="textup">(<a href="runs.html#eq:total">6</a>)</span>, i.e. \(\Expc (T)=t(n)/2^n\).
+</p>
+
+<p>
+Let us extend the procedure above and define indicator r.v.’s \(R_k^{(i)}\) such that \(\Pr (R_k^{(i)}=1)\) is the probability that a run of length \(i\) starts at position \(k\). We have that
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{}{11}\)</span>
+
+<!--
+
+                                                                                                                     (i)                 (i)
+                                                                                                                Pr(Rk = 1) = Pr(Rk = 1|Sk = 1) Pr(Sk = 1),                                                                 (12)                  --><a id="eq:prk"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\Pr (R_k^{(i)}=1)=\Pr (R_k^{(i)}=1|S_k=1)\Pr (S_k=1),\label {eq:prk}
+\end{equation}
+
+</p>
+
+<p>
+because \(\Pr (R_k^{(i)}=1|S_k=0)=0\). As for the conditional probabilities in&nbsp;<span class="textup">(<a href="runs.html#eq:prk">12</a>)</span>, there are three cases:
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{}{12}\)</span>
+
+<!--
+
+
+                                                                                                                 if 1 ≤ k ≤ n − i
+                                                                                                     −i
+                                                                                                     2
+                                                                                (i)
+                                                                            Pr(Rk = 1|Sk = 1) =       2−(i−1)    if k = n − i + 1     .                                                                             (13)                    --><a id="eq:cond_pr"></a><!--
+                                                                                                      0          if n − i + 1 < k ≤ n
+                                                                                                
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:cond_pr} \Pr (R_k^{(i)}=1|S_k=1)=\left \{ \begin{array}{l l} 2^{-i}&amp; \text { if }1\le k\le n-i\\ 2^{-(i-1)}&amp; \text { if }k= n-i+1\\ 0 &amp; \text { if } n-i+1&lt;k\le n \end {array}\right ..
+\end{equation}
+
+</p>
+
+<p>
+The first two cases are just the application of the geometric distribution with parameter \(1/2\), noting that in the second case the run does not need to be finished by a zero. Now, the number of runs of length \(i\) is given by r.v. \(T^{(i)}=\sum _{k=1}^n R_k^{(i)}\),
+whose expectation \(\Expc (T^{(i)})=\sum _{k=1}^n \Expc (R_k^{(i)})=\sum _{k=1}^n \Pr (R_k^{(i)}=1)\) is
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{}{13}\)</span>
+
+<!--
+
+
+                                                                                                                            E(T (i) ) = (n − i + 3) 2−i−2 .                                                           (14)                   --><a id="eq:exp_ti"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:exp_ti} \Expc (T^{(i)})=(n-i+3)\,2^{-i-2}.
+\end{equation}
+
+</p>
+
+<p>
+Again, we have that&nbsp;<span class="textup">(<a href="runs.html#eq:exp_ti">14</a>)</span> is the normalisation of&nbsp;<span class="textup">(<a href="runs.html#eq:rn">4</a>)</span>, i.e. \(\Expc (T^{(i)})=r_n(i)/2^n\).
+</p>
+
+<p>
+The total fraction of runs of length \(i\) is
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{}{14}\)</span>
+
+<!--
+
+                                                                                                                                      rn (i)   n − i + 3 −i
+                                                                                                                           fn (i) =          =          2                                                                  (15)                  --><a id="eq:fni"></a><!--
+                                                                                                                                      t(n)       n+1
+
+-->
+
+<p>
+
+\begin{equation}
+\label {eq:fni} f_n(i)=\frac {r_n(i)}{t(n)}=\frac {n-i+3}{n+1}\,2^{-i}
+\end{equation}
+
+</p>
+
+<p>
+for \(1\le i\le n-1\), whereas \(f_n(n)=1/t(n)\). Interestingly, \(f_n(2)=1/4\) for any \(n&gt;2\). For large \(n\),&nbsp;<span class="textup">(<a href="runs.html#eq:fni">15</a>)</span> should approximate the fraction of runs of length \(i\) in one single
+binary \(n\)-string drawn uniformly at random, in which case \(f_n(i)\approx 2^{-i}\).
+</p>
+<!--
+...... section Connections with Compositions, and Relationship to OEIS Sequences ......
+-->
+<h4 id="autosec-28"><span class="sectionnumber">5&#x2003;</span>Connections with Compositions, and Relationship to OEIS Sequences</h4>
+<a id="runs-autopage-28"></a>
+
+
+<a id="sec:relat-sequ-a045623-1"></a>
+
+<p>
+Sequence <a href="https://oeis.org/A045623" target="_blank" >A045623</a> from OEIS&nbsp;[<a href="runs.html#LWR-ht-cite.0@oeis">6</a>] (number of \(1\)’s in all compositions of \(j+1\)) is defined by \(a(j)=(j+3)\,2^{j-2}\) for \(j\ge 1\) and
+\(a(0)=1\). Observing&nbsp;<span class="textup">(<a href="runs.html#eq:rn">4</a>)</span>, \(r_n(i)=a(n-i)\).
+</p>
+
+<p>
+Also, sequence <a href="https://oeis.org/A001792" target="_blank" >A001792</a> (number of parts in all compositions of \(j + 1\)) is defined by \(b(j) = (j+2)\, 2^{j-1}\). From&nbsp;<span class="textup">(<a href="runs.html#eq:total">6</a>)</span>,
+\(t(n)=b(n-1)\).
+</p>
+
+<p>
+Similarly, the equivalent of expression&nbsp;<span class="textup">(<a href="runs.html#eq:total_alt">7</a>)</span> and expression&nbsp;<span class="textup">(<a href="runs.html#eq:rn_expanded_2">9</a>)</span> are given in <a
+href="https://oeis.org/A045623" target="_blank" >A045623</a> and <a href="https://oeis.org/A001792" target="_blank" >A001792</a>, respectively.
+</p>
+
+<p>
+These connections are due to the bijection between runs in binary \(n\)-strings and parts of the compositions of \(n\), which is easy to observe when the compositions are put as the different ways in which the sum \(1+1+\cdots +1=n\) can be partitioned into nonzero
+parts (see diagram at start of Section&nbsp;<a href="runs.html#sec:counting-runs-using">3</a>). Therefore, the runs in all binary \(n\)-strings are in a one-to-one correspondence with the parts in all compositions of \(n\), which is \(t(n)\) in both cases. Similarly,
+the runs of length \(1\) in all binary \(n\)-strings are in a one-to-one correspondence with the \(1\)’s in all compositions of \(n\), which is \(r_n(1)\) in both cases.
+</p>
+
+<p>
+After noticing the connection between runs in binary strings and compositions, we found that the gist of the counting argument that we used in Section&nbsp;<a href="runs.html#sec:counting-runs">2</a> was previously given by Mike Earnest in <a
+href="https://math.stackexchange.com/questions/3531833/number-of-parts-equal-to-1-in-all-compositions-of-n" target="_blank" >Number of parts equal to \(1\) in all compositions of \(n\)</a>. Also, the argument to get&nbsp;<span class="textup">(<a
+href="runs.html#eq:total_alt">7</a>)</span> must be well known in the compositions problem.
+</p>
+<!--
+...... section Acknowledgements ......
+-->
+<h4 id="autosec-29">Acknowledgements</h4>
+<a id="runs-autopage-29"></a>
+
+
+<a id="sec:acknowledgements"></a>
+
+<p>
+Thanks to Kevin Ryde for pointing out the connection with A001729.
+</p>
+<!--
+...... section References ......
+-->
+<h4 id="autosec-30">References</h4>
+<a id="runs-autopage-30"></a>
+
+
+<ul class="list" style="list-style-type:none">
+
+
+<li>
+<p>
+<span class="listmarker">[1]</span> <a id="LWR-ht-cite.0@mood40:_distr_theor_runs"></a>A. M. Mood. “The Distribution Theory of Runs”. In: <em>Ann. Math. Statist.</em> 11.4 (Dec. 1940), pp. 367–392.
+</p>
+
+
+</li>
+<li>
+
+
+<p>
+<span class="listmarker">[2]</span> <a id="LWR-ht-cite.0@sinha12:_energy"></a>K. Sinha and B.P. Sinha. “Energy-efficient communication: Understanding the distribution of runs in binary strings”. In: <em>1st International Conference on Recent Advances in
+Information Technology (RAIT)</em>. Dhanbad, India, Jan. 2012, pp. 177–181.
+</p>
+
+
+</li>
+<li>
+
+
+<p>
+<span class="listmarker">[3]</span> <a id="LWR-ht-cite.0@sinha09"></a>K. Sinha and B.P. Sinha. “On the distribution of runs of ones in binary strings”. In: <em>Computers &amp; Mathematics with Applications</em> 58.9 (2009), pp. 1816–1829.
+</p>
+
+
+</li>
+<li>
+
+
+<p>
+<span class="listmarker">[4]</span> <a id="LWR-ht-cite.0@makri12:_count_runs_ones_ones_runs"></a>F.S. Makri, Z.M. Psillakis, and N.K. Kollas. “Counting Runs of Ones and Ones in Runs of Ones in Binary Strings”. In: <em>Open Journal of Applied
+Sciences</em> 02 (2012), pp. 44–47.
+</p>
+
+
+</li>
+<li>
+
+
+<p>
+<span class="listmarker">[5]</span> <a id="LWR-ht-cite.0@kronenburg11"></a>M.J. Kronenburg. <em>The Binomial Coefficient for Negative Arguments</em>. <a href="https://arxiv.org/abs/1105.3689" target="_blank" >arXiv:1105.3689 [math.CO]</a>. 2011.
+</p>
+
+
+</li>
+<li>
+
+
+<p>
+<span class="listmarker">[6]</span> <a id="LWR-ht-cite.0@oeis"></a>N.J.A. Sloane and The OEIS Foundation Inc. <em>The on-line encyclopedia of integer sequences</em>. <a href="http://oeis.org" target="_blank" >http://oeis.org</a>. 2020.
+</p>
+</li>
+</ul>
+<div class="center">
+
+<p>
+<i>Last updated: 2026/03/26 09:54:01</i>
+</p>
+
+<p>
+[<a href="https://fbalado.github.io" target="_blank" >back</a>]
+</p>
+</div>
+
+<a id="runs-autofile-last"></a>
+</section>
+
+</main>
+
+</div>
+
+</body>
+</html>
